@@ -14,12 +14,12 @@ docker swarm init
 
 The docker networks needed are:
 
-- uniba-dev
+- euler-dev
 
 You can create it with this command:
 
 ```bash
-docker network create -d overlay uniba-dev
+docker network create -d overlay euler-dev
 ```
 
 #### Docker secrets

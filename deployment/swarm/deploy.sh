@@ -1,12 +1,11 @@
 #!/bin/bash
 
 # YAML file name
-file="stagionality.yml"
+file="euler.yml"
 
 # Check if the file exists
 if [ ! -f "$file" ]; then
     echo "File $file not found"
-    exit 1
 fi
 
 # Find the first line starting with "name" and store it in a variable
@@ -21,4 +20,4 @@ fi
 sed -i 's/published: "\([0-9]*\)"/published: \1/g' "$file"
 
 
-docker stack deploy -c stagionality.yml stagionality
+docker stack deploy -c euler.yml euler

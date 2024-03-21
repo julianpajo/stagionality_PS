@@ -1,5 +1,5 @@
 #!/bin/bash
 
-docker-compose --env-file .deploy.env -f stack-dev.yml  config > stagionality.yml
+docker-compose --env-file .deploy.env -f stack-dev.yml  config > euler.yml
 
-echo "stagionality.yml created succesfully"
+echo "euler.yml created succesfully"

@@ -13,23 +13,23 @@ SET check_function_bodies = false;
 SET client_min_messages = warning;
 SET row_security = off;
 
-ALTER DATABASE "UNIBA" OWNER TO uniba;
+ALTER DATABASE "EULER" OWNER TO euler;
 
-ALTER DATABASE "UNIBA" SET search_path=public,pg_catalog,postgis,topology,tiger,pgcrypto,dblink,uniba;
+ALTER DATABASE "EULER" SET search_path=public,pg_catalog,postgis,topology,tiger,pgcrypto,dblink,euler;
 
-\connect "UNIBA"
-
-
-CREATE SCHEMA uniba;
+\connect "EULER"
 
 
-ALTER SCHEMA uniba OWNER TO postgres;
+CREATE SCHEMA euler;
 
--- FUNCTION: uniba.refresh_vwm_ps_organization(character varying)
 
--- DROP FUNCTION uniba.refresh_vwm_ps_organization(character varying);
+ALTER SCHEMA euler OWNER TO postgres;
 
-CREATE OR REPLACE FUNCTION uniba.refresh_vwm_ps_organization(
+-- FUNCTION: euler.refresh_vwm_ps_organization(character varying)
+
+-- DROP FUNCTION euler.refresh_vwm_ps_organization(character varying);
+
+CREATE OR REPLACE FUNCTION euler.refresh_vwm_ps_organization(
 	company_alias character varying)
     RETURNS integer
     LANGUAGE 'plpgsql'
@@ -69,9 +69,9 @@ BEGIN
     ordering_coherence_norm_idx := 'vwm_ps_' || company_alias || '_ordering_coherence_norm_idx';
     pass_idx := 'vwm_ps_' || company_alias || '_pass_idx';
 
-    EXECUTE format('DROP MATERIALIZED VIEW IF EXISTS uniba.%I', tmp_view_name);
+    EXECUTE format('DROP MATERIALIZED VIEW IF EXISTS euler.%I', tmp_view_name);
 
-    EXECUTE format('CREATE MATERIALIZED VIEW uniba.%I AS
+    EXECUTE format('CREATE MATERIALIZED VIEW euler.%I AS
 					(WITH clipped_crop AS (
 						SELECT crop.id,
 							   ST_Intersection(crop.geom,  organization_deals.geom_4326) as geom,
@@ -80,9 +80,9 @@ BEGIN
 							   crop_parameter.coh_min,
 							   sensor.name as sensor_name
 						FROM (SELECT sensor_id, st_union(geom) geom_4326
-							  FROM uniba.deal
+							  FROM euler.deal
 							  WHERE EXISTS (SELECT 1
-											FROM uniba.organization
+											FROM euler.organization
 											WHERE organization.id = deal.organization_id AND organization.alias::text = %L::text) AND deal.service_type=''displacement''
 							  GROUP BY sensor_id) organization_deals
 						JOIN sensor ON sensor.id = organization_deals.sensor_id
@@ -137,9 +137,9 @@ BEGIN
 							   crop_parameter.coh_min,
 							   sensor.name as sensor_name
 						FROM (SELECT sensor_id, st_union(geom) geom_4326
-							  FROM uniba.deal
+							  FROM euler.deal
 							  WHERE EXISTS (SELECT 1
-											FROM uniba.organization
+											FROM euler.organization
 											WHERE organization.id = deal.organization_id AND organization.alias::text = %L::text) AND deal.service_type=''displacement''
 							  GROUP BY sensor_id) organization_deals
 						JOIN sensor ON sensor.id = organization_deals.sensor_id
@@ -194,9 +194,9 @@ BEGIN
 							   crop_parameter.coh_min,
 							   sensor.name as sensor_name
 						FROM (SELECT sensor_id, st_union(geom) geom_4326
-							  FROM uniba.deal
+							  FROM euler.deal
 							  WHERE EXISTS (SELECT 1
-											FROM uniba.organization
+											FROM euler.organization
 											WHERE organization.id = deal.organization_id AND organization.alias::text = %L::text) AND deal.service_type=''displacement''
 							  GROUP BY sensor_id) organization_deals
 						JOIN sensor ON sensor.id = organization_deals.sensor_id
@@ -245,81 +245,81 @@ BEGIN
 				  	JOIN corner_reflector ON cr_scatterer.corner_reflector_id = corner_reflector.id)
         WITH NO DATA', tmp_view_name, company_alias, company_alias, company_alias, company_alias, company_alias, company_alias);
 
-    EXECUTE format('ALTER MATERIALIZED VIEW uniba.%I SET (
+    EXECUTE format('ALTER MATERIALIZED VIEW euler.%I SET (
                 autovacuum_enabled = false, toast.autovacuum_enabled = false
                 )', tmp_view_name);
 
 	SET  join_collapse_limit TO 1;
-    EXECUTE format('REFRESH MATERIALIZED VIEW uniba.%I WITH DATA', tmp_view_name);
+    EXECUTE format('REFRESH MATERIALIZED VIEW euler.%I WITH DATA', tmp_view_name);
 	RESET  join_collapse_limit;
 
-	EXECUTE format('COMMENT ON COLUMN uniba.%I.geom IS ''POSTLOAD_NOTNULL''',
+	EXECUTE format('COMMENT ON COLUMN euler.%I.geom IS ''POSTLOAD_NOTNULL''',
 				   tmp_view_name);
 
     -- indices and autovacuum
     EXECUTE format('CREATE INDEX %I
-                    ON uniba.%I USING btree
+                    ON euler.%I USING btree
                     (g_an)
 				    WITH (fillfactor = 100)
                     TABLESPACE pg_default', g_an_idx || '_tmp', tmp_view_name);
     EXECUTE format('CREATE INDEX %I
-                    ON uniba.%I USING btree
+                    ON euler.%I USING btree
                     (g_v)
 				    WITH (fillfactor = 100)
                     TABLESPACE pg_default', g_v_idx || '_tmp', tmp_view_name);
     EXECUTE format('CREATE INDEX %I
-                    ON uniba.%I USING gist
+                    ON euler.%I USING gist
                     (geom, coherence)
 					WITH (fillfactor=100)
                     TABLESPACE pg_default', geom_coherence_idx || '_tmp', tmp_view_name);
     EXECUTE format('CREATE INDEX %I
-                    ON uniba.%I USING gist
+                    ON euler.%I USING gist
                     (geom, coherence_norm)
 					WITH (fillfactor=100)
                     TABLESPACE pg_default', geom_coherence_norm_idx || '_tmp', tmp_view_name);
 	EXECUTE format('CREATE INDEX %I
-                    ON uniba.%I USING gist
+                    ON euler.%I USING gist
                     (geom)
 					WITH (fillfactor=100)
                     TABLESPACE pg_default  WHERE coherence >= 0.85::double precision AND coherence IS NOT NULL', geom_partial_coherence_idx || '_tmp', tmp_view_name);
 	EXECUTE format('CREATE INDEX %I
-                    ON uniba.%I USING gist
+                    ON euler.%I USING gist
                     (geom)
 					WITH (fillfactor=100)
                     TABLESPACE pg_default  WHERE coherence_norm >= 0.5::double precision AND coherence_norm IS NOT NULL', geom_partial_coherence_norm_idx || '_tmp', tmp_view_name);
     EXECUTE format('CREATE INDEX %I
-                    ON uniba.%I USING btree
+                    ON euler.%I USING btree
                     (ly_an)
 				    WITH (fillfactor = 100)
                     TABLESPACE pg_default', ly_an_idx || '_tmp', tmp_view_name);
     EXECUTE format('CREATE INDEX %I
-                    ON uniba.%I USING btree
+                    ON euler.%I USING btree
                     (ly_v)
 					WITH (fillfactor = 100)
                     TABLESPACE pg_default', ly_v_idx || '_tmp', tmp_view_name);
     EXECUTE format('CREATE INDEX %I
-                    ON uniba.%I USING btree
+                    ON euler.%I USING btree
                     (ordering, coherence)
 					INCLUDE (g_v, g_an, ly_v, ly_an, pass, scatterer_type, geom)
 				    WITH (fillfactor = 100)
                     TABLESPACE pg_default', ordering_coherence_idx || '_tmp', tmp_view_name);
     EXECUTE format('CREATE INDEX %I
-                    ON uniba.%I USING btree
+                    ON euler.%I USING btree
                     (ordering, coherence_norm)
 					INCLUDE (g_v, g_an, ly_v, ly_an, pass, scatterer_type, geom)
 				    WITH (fillfactor = 100)
                     TABLESPACE pg_default', ordering_coherence_norm_idx || '_tmp', tmp_view_name);
 
- 	EXECUTE format('CLUSTER uniba.%I USING %I', tmp_view_name, geom_coherence_norm_idx || '_tmp');
+ 	EXECUTE format('CLUSTER euler.%I USING %I', tmp_view_name, geom_coherence_norm_idx || '_tmp');
 
-	EXECUTE format('ANALYZE uniba.%I', tmp_view_name);
-	EXECUTE format('ALTER MATERIALIZED VIEW uniba.%I SET (
+	EXECUTE format('ANALYZE euler.%I', tmp_view_name);
+	EXECUTE format('ALTER MATERIALIZED VIEW euler.%I SET (
                         autovacuum_enabled = true, toast.autovacuum_enabled = true
                     )', tmp_view_name);
 
-    EXECUTE format('ALTER MATERIALIZED VIEW IF EXISTS uniba.%I RENAME TO %I', view_name, view_name || '_old');
-    EXECUTE format('ALTER MATERIALIZED VIEW uniba.%I RENAME TO %I', tmp_view_name, view_name);
-    EXECUTE format('DROP MATERIALIZED VIEW IF EXISTS uniba.%I', view_name || '_old');
+    EXECUTE format('ALTER MATERIALIZED VIEW IF EXISTS euler.%I RENAME TO %I', view_name, view_name || '_old');
+    EXECUTE format('ALTER MATERIALIZED VIEW euler.%I RENAME TO %I', tmp_view_name, view_name);
+    EXECUTE format('DROP MATERIALIZED VIEW IF EXISTS euler.%I', view_name || '_old');
 
     -- rename indices
     EXECUTE format('ALTER INDEX %I RENAME TO %I', g_an_idx || '_tmp', g_an_idx);
@@ -338,15 +338,15 @@ BEGIN
 END;
 $BODY$;
 
-ALTER FUNCTION uniba.refresh_vwm_ps_organization(character varying) OWNER TO uniba;
+ALTER FUNCTION euler.refresh_vwm_ps_organization(character varying) OWNER TO euler;
 
 
 --
 -- TOC entry 1930 (class 1255 OID 19278)
--- Name: update_acceleration_norm(integer); Type: FUNCTION; Schema: uniba; Owner: uniba
+-- Name: update_acceleration_norm(integer); Type: FUNCTION; Schema: euler; Owner: euler
 --
 
-CREATE FUNCTION uniba.update_acceleration_norm(crop_id_value integer) RETURNS integer
+CREATE FUNCTION euler.update_acceleration_norm(crop_id_value integer) RETURNS integer
     LANGUAGE plpgsql
     AS $$
 
@@ -375,8 +375,8 @@ BEGIN
         max((periodic_properties -> 'g' ->> 'a')::float) - min((periodic_properties -> 'g' ->> 'a')::float) as delta_g,
         min((periodic_properties -> 'ly' ->> 'a')::float) as min_ly,
         max((periodic_properties -> 'ly' ->> 'a')::float) - min((periodic_properties -> 'ly' ->> 'a')::float) as delta_ly      
-    FROM uniba.ps INNER
-	JOIN uniba.scatterer ON ps.scatterer_id = scatterer.id
+    FROM euler.ps INNER
+	JOIN euler.scatterer ON ps.scatterer_id = scatterer.id
     WHERE crop_id = crop_id_value
     INTO min_g, delta_g, min_ly, delta_ly;
 
@@ -396,7 +396,7 @@ BEGIN
 
     OPEN cursor_ps NO SCROLL FOR
         SELECT periodic_properties, scatterer_id
-        FROM uniba.ps INNER JOIN uniba.scatterer ON ps.scatterer_id = scatterer.id
+        FROM euler.ps INNER JOIN euler.scatterer ON ps.scatterer_id = scatterer.id
         WHERE crop_id = crop_id_value;
 
     LOOP
@@ -422,8 +422,8 @@ BEGIN
         max((periodic_properties -> 'g' ->> 'a')::float) - min((periodic_properties -> 'g' ->> 'a')::float) as delta_g,
         min((periodic_properties -> 'ly' ->> 'a')::float) as min_ly,
         max((periodic_properties -> 'ly' ->> 'a')::float) - min((periodic_properties -> 'ly' ->> 'a')::float) as delta_ly        
-    FROM uniba.ds INNER
-	JOIN uniba.scatterer ON ds.scatterer_id = scatterer.id
+    FROM euler.ds INNER
+	JOIN euler.scatterer ON ds.scatterer_id = scatterer.id
     WHERE crop_id = crop_id_value
     INTO min_g, delta_g, min_ly, delta_ly;
 
@@ -443,7 +443,7 @@ BEGIN
 
     OPEN cursor_ds NO SCROLL FOR
         SELECT periodic_properties, scatterer_id
-        FROM uniba.ds INNER JOIN uniba.scatterer ON ds.scatterer_id = scatterer.id
+        FROM euler.ds INNER JOIN euler.scatterer ON ds.scatterer_id = scatterer.id
         WHERE crop_id = crop_id_value;
 
     LOOP
@@ -469,8 +469,8 @@ BEGIN
         max((periodic_properties -> 'g' ->> 'a')::float) - min((periodic_properties -> 'g' ->> 'a')::float) as delta_g,
         min((periodic_properties -> 'ly' ->> 'a')::float) as min_ly,
         max((periodic_properties -> 'ly' ->> 'a')::float) - min((periodic_properties -> 'ly' ->> 'a')::float) as delta_ly
-    FROM uniba.cr_scatterer INNER
-	JOIN uniba.scatterer ON cr_scatterer.scatterer_id = scatterer.id
+    FROM euler.cr_scatterer INNER
+	JOIN euler.scatterer ON cr_scatterer.scatterer_id = scatterer.id
     WHERE crop_id = crop_id_value
     INTO min_g, delta_g, min_ly, delta_ly;
 
@@ -490,7 +490,7 @@ BEGIN
 
     OPEN cursor_cr_scatterer NO SCROLL FOR
         SELECT periodic_properties, scatterer_id
-        FROM uniba.cr_scatterer INNER JOIN uniba.scatterer ON cr_scatterer.scatterer_id = scatterer.id
+        FROM euler.cr_scatterer INNER JOIN euler.scatterer ON cr_scatterer.scatterer_id = scatterer.id
         WHERE crop_id = crop_id_value;
 
     LOOP
@@ -518,14 +518,14 @@ END;
 $$;
 
 
-ALTER FUNCTION uniba.update_acceleration_norm(crop_id_value integer) OWNER TO uniba;
+ALTER FUNCTION euler.update_acceleration_norm(crop_id_value integer) OWNER TO euler;
 
 --
 -- TOC entry 1931 (class 1255 OID 19279)
--- Name: update_geo_json_from_geom(); Type: FUNCTION; Schema: uniba; Owner: uniba
+-- Name: update_geo_json_from_geom(); Type: FUNCTION; Schema: euler; Owner: euler
 --
 
-CREATE FUNCTION uniba.update_geo_json_from_geom() RETURNS trigger
+CREATE FUNCTION euler.update_geo_json_from_geom() RETURNS trigger
     LANGUAGE plpgsql
     AS $$
 BEGIN
@@ -535,14 +535,14 @@ END;
 $$;
 
 
-ALTER FUNCTION uniba.update_geo_json_from_geom() OWNER TO uniba;
+ALTER FUNCTION euler.update_geo_json_from_geom() OWNER TO euler;
 
 --
 -- TOC entry 1932 (class 1255 OID 19280)
--- Name: update_geom_from_geo_json(); Type: FUNCTION; Schema: uniba; Owner: uniba
+-- Name: update_geom_from_geo_json(); Type: FUNCTION; Schema: euler; Owner: euler
 --
 
-CREATE FUNCTION uniba.update_geom_from_geo_json() RETURNS trigger
+CREATE FUNCTION euler.update_geom_from_geo_json() RETURNS trigger
     LANGUAGE plpgsql
     AS $$
 BEGIN
@@ -552,14 +552,14 @@ END;
 $$;
 
 
-ALTER FUNCTION uniba.update_geom_from_geo_json() OWNER TO uniba;
+ALTER FUNCTION euler.update_geom_from_geo_json() OWNER TO euler;
 
 --
 -- TOC entry 1933 (class 1255 OID 19281)
--- Name: update_geom_from_lat_lon(); Type: FUNCTION; Schema: uniba; Owner: uniba
+-- Name: update_geom_from_lat_lon(); Type: FUNCTION; Schema: euler; Owner: euler
 --
 
-CREATE FUNCTION uniba.update_geom_from_lat_lon() RETURNS trigger
+CREATE FUNCTION euler.update_geom_from_lat_lon() RETURNS trigger
     LANGUAGE plpgsql
     AS $$
 
@@ -575,14 +575,14 @@ CREATE FUNCTION uniba.update_geom_from_lat_lon() RETURNS trigger
 $$;
 
 
-ALTER FUNCTION uniba.update_geom_from_lat_lon() OWNER TO uniba;
+ALTER FUNCTION euler.update_geom_from_lat_lon() OWNER TO euler;
 
 --
 -- TOC entry 1934 (class 1255 OID 19282)
--- Name: update_geom_from_lat_lon_elevation(); Type: FUNCTION; Schema: uniba; Owner: uniba
+-- Name: update_geom_from_lat_lon_elevation(); Type: FUNCTION; Schema: euler; Owner: euler
 --
 
-CREATE FUNCTION uniba.update_geom_from_lat_lon_elevation() RETURNS trigger
+CREATE FUNCTION euler.update_geom_from_lat_lon_elevation() RETURNS trigger
     LANGUAGE plpgsql
     AS $$
 BEGIN
@@ -592,14 +592,14 @@ END;
 $$;
 
 
-ALTER FUNCTION uniba.update_geom_from_lat_lon_elevation() OWNER TO uniba;
+ALTER FUNCTION euler.update_geom_from_lat_lon_elevation() OWNER TO euler;
 
 --
 -- TOC entry 1935 (class 1255 OID 19283)
--- Name: update_update_date(); Type: FUNCTION; Schema: uniba; Owner: uniba
+-- Name: update_update_date(); Type: FUNCTION; Schema: euler; Owner: euler
 --
 
-CREATE FUNCTION uniba.update_update_date() RETURNS trigger
+CREATE FUNCTION euler.update_update_date() RETURNS trigger
     LANGUAGE plpgsql
     AS $$
         BEGIN
@@ -609,16 +609,16 @@ CREATE FUNCTION uniba.update_update_date() RETURNS trigger
     $$;
 
 
-ALTER FUNCTION uniba.update_update_date() OWNER TO uniba;
+ALTER FUNCTION euler.update_update_date() OWNER TO euler;
 
 SET default_with_oids = false;
 
 --
 -- TOC entry 280 (class 1259 OID 19284)
--- Name: aoi; Type: TABLE; Schema: uniba; Owner: uniba
+-- Name: aoi; Type: TABLE; Schema: euler; Owner: euler
 --
 
-CREATE TABLE uniba.aoi (
+CREATE TABLE euler.aoi (
     id integer NOT NULL,
     create_date timestamp without time zone DEFAULT now(),
     update_date timestamp without time zone,
@@ -628,14 +628,14 @@ CREATE TABLE uniba.aoi (
 );
 
 
-ALTER TABLE uniba.aoi OWNER TO uniba;
+ALTER TABLE euler.aoi OWNER TO euler;
 
 --
 -- TOC entry 281 (class 1259 OID 19291)
--- Name: aoi_id_seq; Type: SEQUENCE; Schema: uniba; Owner: uniba
+-- Name: aoi_id_seq; Type: SEQUENCE; Schema: euler; Owner: euler
 --
 
-CREATE SEQUENCE uniba.aoi_id_seq
+CREATE SEQUENCE euler.aoi_id_seq
     AS integer
     START WITH 1
     INCREMENT BY 1
@@ -644,23 +644,23 @@ CREATE SEQUENCE uniba.aoi_id_seq
     CACHE 1;
 
 
-ALTER TABLE uniba.aoi_id_seq OWNER TO uniba;
+ALTER TABLE euler.aoi_id_seq OWNER TO euler;
 
 --
 -- TOC entry 5588 (class 0 OID 0)
 -- Dependencies: 281
--- Name: aoi_id_seq; Type: SEQUENCE OWNED BY; Schema: uniba; Owner: uniba
+-- Name: aoi_id_seq; Type: SEQUENCE OWNED BY; Schema: euler; Owner: euler
 --
 
-ALTER SEQUENCE uniba.aoi_id_seq OWNED BY uniba.aoi.id;
+ALTER SEQUENCE euler.aoi_id_seq OWNED BY euler.aoi.id;
 
 
 --
 -- TOC entry 329 (class 1259 OID 19781)
--- Name: bookmark; Type: TABLE; Schema: uniba; Owner: uniba
+-- Name: bookmark; Type: TABLE; Schema: euler; Owner: euler
 --
 
-CREATE TABLE uniba.bookmark (
+CREATE TABLE euler.bookmark (
     id integer NOT NULL,
     name text,
     geom postgis.geometry,
@@ -671,14 +671,14 @@ CREATE TABLE uniba.bookmark (
 );
 
 
-ALTER TABLE uniba.bookmark OWNER TO uniba;
+ALTER TABLE euler.bookmark OWNER TO euler;
 
 --
 -- TOC entry 328 (class 1259 OID 19779)
--- Name: bookmark_id_seq; Type: SEQUENCE; Schema: uniba; Owner: uniba
+-- Name: bookmark_id_seq; Type: SEQUENCE; Schema: euler; Owner: euler
 --
 
-CREATE SEQUENCE uniba.bookmark_id_seq
+CREATE SEQUENCE euler.bookmark_id_seq
     AS integer
     START WITH 1
     INCREMENT BY 1
@@ -687,23 +687,23 @@ CREATE SEQUENCE uniba.bookmark_id_seq
     CACHE 1;
 
 
-ALTER TABLE uniba.bookmark_id_seq OWNER TO uniba;
+ALTER TABLE euler.bookmark_id_seq OWNER TO euler;
 
 --
 -- TOC entry 5589 (class 0 OID 0)
 -- Dependencies: 328
--- Name: bookmark_id_seq; Type: SEQUENCE OWNED BY; Schema: uniba; Owner: uniba
+-- Name: bookmark_id_seq; Type: SEQUENCE OWNED BY; Schema: euler; Owner: euler
 --
 
-ALTER SEQUENCE uniba.bookmark_id_seq OWNED BY uniba.bookmark.id;
+ALTER SEQUENCE euler.bookmark_id_seq OWNED BY euler.bookmark.id;
 
 
 --
 -- TOC entry 282 (class 1259 OID 19293)
--- Name: crop; Type: TABLE; Schema: uniba; Owner: uniba
+-- Name: crop; Type: TABLE; Schema: euler; Owner: euler
 --
 
-CREATE TABLE uniba.crop (
+CREATE TABLE euler.crop (
     id integer NOT NULL,
     create_date timestamp without time zone DEFAULT now(),
     update_date timestamp without time zone,
@@ -716,36 +716,36 @@ CREATE TABLE uniba.crop (
 );
 
 
-ALTER TABLE uniba.crop OWNER TO uniba;
+ALTER TABLE euler.crop OWNER TO euler;
 
 --
 -- TOC entry 5590 (class 0 OID 0)
 -- Dependencies: 282
--- Name: COLUMN crop.name; Type: COMMENT; Schema: uniba; Owner: uniba
+-- Name: COLUMN crop.name; Type: COMMENT; Schema: euler; Owner: euler
 --
 
-COMMENT ON COLUMN uniba.crop.name IS 'Deprecated: only used for recognizing the crop area of interest';
+COMMENT ON COLUMN euler.crop.name IS 'Deprecated: only used for recognizing the crop area of interest';
 
 
 --
 -- TOC entry 283 (class 1259 OID 19300)
--- Name: crop_blacklist; Type: TABLE; Schema: uniba; Owner: uniba
+-- Name: crop_blacklist; Type: TABLE; Schema: euler; Owner: euler
 --
 
-CREATE TABLE uniba.crop_blacklist (
+CREATE TABLE euler.crop_blacklist (
     organization_id integer NOT NULL,
     crop_id integer NOT NULL
 );
 
 
-ALTER TABLE uniba.crop_blacklist OWNER TO uniba;
+ALTER TABLE euler.crop_blacklist OWNER TO euler;
 
 --
 -- TOC entry 284 (class 1259 OID 19303)
--- Name: crop_id_seq; Type: SEQUENCE; Schema: uniba; Owner: uniba
+-- Name: crop_id_seq; Type: SEQUENCE; Schema: euler; Owner: euler
 --
 
-CREATE SEQUENCE uniba.crop_id_seq
+CREATE SEQUENCE euler.crop_id_seq
     START WITH 0
     INCREMENT BY 1
     MINVALUE 0
@@ -753,23 +753,23 @@ CREATE SEQUENCE uniba.crop_id_seq
     CACHE 1;
 
 
-ALTER TABLE uniba.crop_id_seq OWNER TO uniba;
+ALTER TABLE euler.crop_id_seq OWNER TO euler;
 
 --
 -- TOC entry 5591 (class 0 OID 0)
 -- Dependencies: 284
--- Name: crop_id_seq; Type: SEQUENCE OWNED BY; Schema: uniba; Owner: uniba
+-- Name: crop_id_seq; Type: SEQUENCE OWNED BY; Schema: euler; Owner: euler
 --
 
-ALTER SEQUENCE uniba.crop_id_seq OWNED BY uniba.crop.id;
+ALTER SEQUENCE euler.crop_id_seq OWNED BY euler.crop.id;
 
 
 --
 -- TOC entry 285 (class 1259 OID 19305)
--- Name: crop_parameter; Type: TABLE; Schema: uniba; Owner: uniba
+-- Name: crop_parameter; Type: TABLE; Schema: euler; Owner: euler
 --
 
-CREATE TABLE uniba.crop_parameter (
+CREATE TABLE euler.crop_parameter (
     id integer NOT NULL,
     crop_id integer,
     status smallint,
@@ -783,14 +783,14 @@ CREATE TABLE uniba.crop_parameter (
 );
 
 
-ALTER TABLE uniba.crop_parameter OWNER TO uniba;
+ALTER TABLE euler.crop_parameter OWNER TO euler;
 
 --
 -- TOC entry 286 (class 1259 OID 19313)
--- Name: crop_parameter_id_seq; Type: SEQUENCE; Schema: uniba; Owner: uniba
+-- Name: crop_parameter_id_seq; Type: SEQUENCE; Schema: euler; Owner: euler
 --
 
-CREATE SEQUENCE uniba.crop_parameter_id_seq
+CREATE SEQUENCE euler.crop_parameter_id_seq
     START WITH 0
     INCREMENT BY 1
     MINVALUE 0
@@ -798,23 +798,23 @@ CREATE SEQUENCE uniba.crop_parameter_id_seq
     CACHE 1;
 
 
-ALTER TABLE uniba.crop_parameter_id_seq OWNER TO uniba;
+ALTER TABLE euler.crop_parameter_id_seq OWNER TO euler;
 
 --
 -- TOC entry 5592 (class 0 OID 0)
 -- Dependencies: 286
--- Name: crop_parameter_id_seq; Type: SEQUENCE OWNED BY; Schema: uniba; Owner: uniba
+-- Name: crop_parameter_id_seq; Type: SEQUENCE OWNED BY; Schema: euler; Owner: euler
 --
 
-ALTER SEQUENCE uniba.crop_parameter_id_seq OWNED BY uniba.crop_parameter.id;
+ALTER SEQUENCE euler.crop_parameter_id_seq OWNED BY euler.crop_parameter.id;
 
 
 --
 -- TOC entry 287 (class 1259 OID 19315)
--- Name: dataset; Type: TABLE; Schema: uniba; Owner: uniba
+-- Name: dataset; Type: TABLE; Schema: euler; Owner: euler
 --
 
-CREATE TABLE uniba.dataset (
+CREATE TABLE euler.dataset (
     id integer NOT NULL,
     supermaster_uid text NOT NULL,
     sensor_id integer NOT NULL,
@@ -823,14 +823,14 @@ CREATE TABLE uniba.dataset (
 );
 
 
-ALTER TABLE uniba.dataset OWNER TO uniba;
+ALTER TABLE euler.dataset OWNER TO euler;
 
 --
 -- TOC entry 288 (class 1259 OID 19321)
--- Name: dataset_id_seq; Type: SEQUENCE; Schema: uniba; Owner: uniba
+-- Name: dataset_id_seq; Type: SEQUENCE; Schema: euler; Owner: euler
 --
 
-CREATE SEQUENCE uniba.dataset_id_seq
+CREATE SEQUENCE euler.dataset_id_seq
     AS integer
     START WITH 0
     INCREMENT BY 1
@@ -839,23 +839,23 @@ CREATE SEQUENCE uniba.dataset_id_seq
     CACHE 1;
 
 
-ALTER TABLE uniba.dataset_id_seq OWNER TO uniba;
+ALTER TABLE euler.dataset_id_seq OWNER TO euler;
 
 --
 -- TOC entry 5593 (class 0 OID 0)
 -- Dependencies: 288
--- Name: dataset_id_seq; Type: SEQUENCE OWNED BY; Schema: uniba; Owner: uniba
+-- Name: dataset_id_seq; Type: SEQUENCE OWNED BY; Schema: euler; Owner: euler
 --
 
-ALTER SEQUENCE uniba.dataset_id_seq OWNED BY uniba.dataset.id;
+ALTER SEQUENCE euler.dataset_id_seq OWNED BY euler.dataset.id;
 
 
 --
 -- TOC entry 289 (class 1259 OID 19323)
--- Name: deal; Type: TABLE; Schema: uniba; Owner: uniba
+-- Name: deal; Type: TABLE; Schema: euler; Owner: euler
 --
 
-CREATE TABLE uniba.deal (
+CREATE TABLE euler.deal (
     id integer NOT NULL,
     create_date timestamp without time zone DEFAULT now(),
     update_date timestamp without time zone,
@@ -877,14 +877,14 @@ CREATE TABLE uniba.deal (
 );
 
 
-ALTER TABLE uniba.deal OWNER TO uniba;
+ALTER TABLE euler.deal OWNER TO euler;
 
 --
 -- TOC entry 290 (class 1259 OID 19331)
--- Name: deal_id_seq; Type: SEQUENCE; Schema: uniba; Owner: uniba
+-- Name: deal_id_seq; Type: SEQUENCE; Schema: euler; Owner: euler
 --
 
-CREATE SEQUENCE uniba.deal_id_seq
+CREATE SEQUENCE euler.deal_id_seq
     AS integer
     START WITH 0
     INCREMENT BY 1
@@ -893,23 +893,23 @@ CREATE SEQUENCE uniba.deal_id_seq
     CACHE 1;
 
 
-ALTER TABLE uniba.deal_id_seq OWNER TO uniba;
+ALTER TABLE euler.deal_id_seq OWNER TO euler;
 
 --
 -- TOC entry 5594 (class 0 OID 0)
 -- Dependencies: 290
--- Name: deal_id_seq; Type: SEQUENCE OWNED BY; Schema: uniba; Owner: uniba
+-- Name: deal_id_seq; Type: SEQUENCE OWNED BY; Schema: euler; Owner: euler
 --
 
-ALTER SEQUENCE uniba.deal_id_seq OWNED BY uniba.deal.id;
+ALTER SEQUENCE euler.deal_id_seq OWNED BY euler.deal.id;
 
 
 --
 -- TOC entry 291 (class 1259 OID 19333)
--- Name: ds; Type: TABLE; Schema: uniba; Owner: uniba
+-- Name: ds; Type: TABLE; Schema: euler; Owner: euler
 --
 
-CREATE TABLE uniba.ds (
+CREATE TABLE euler.ds (
     create_date timestamp without time zone DEFAULT now(),
     update_date timestamp without time zone DEFAULT now(),
     coherence real,
@@ -925,28 +925,28 @@ CREATE TABLE uniba.ds (
 WITH (fillfactor='70', autovacuum_vacuum_threshold='1000000', autovacuum_vacuum_scale_factor='0', autovacuum_enabled='true', toast.autovacuum_enabled='true');
 
 
-ALTER TABLE uniba.ds OWNER TO uniba;
+ALTER TABLE euler.ds OWNER TO euler;
 
 --
 -- TOC entry 292 (class 1259 OID 19342)
--- Name: ds_measurement; Type: TABLE; Schema: uniba; Owner: uniba; Tablespace: hdd1
+-- Name: ds_measurement; Type: TABLE; Schema: euler; Owner: euler; Tablespace: hdd1
 --
 
-CREATE TABLE uniba.ds_measurement (
+CREATE TABLE euler.ds_measurement (
     measurement text,
     scatterer_id integer NOT NULL
 )
 WITH (fillfactor='70', autovacuum_vacuum_threshold='1000000', autovacuum_vacuum_scale_factor='0', autovacuum_enabled='true', toast.autovacuum_enabled='true');
 
 
-ALTER TABLE uniba.ds_measurement OWNER TO uniba;
+ALTER TABLE euler.ds_measurement OWNER TO euler;
 
 --
 -- TOC entry 293 (class 1259 OID 19348)
--- Name: layer; Type: TABLE; Schema: uniba; Owner: uniba
+-- Name: layer; Type: TABLE; Schema: euler; Owner: euler
 --
 
-CREATE TABLE uniba.layer (
+CREATE TABLE euler.layer (
     id integer NOT NULL,
     create_date timestamp without time zone DEFAULT now(),
     update_date timestamp without time zone,
@@ -955,14 +955,14 @@ CREATE TABLE uniba.layer (
 );
 
 
-ALTER TABLE uniba.layer OWNER TO uniba;
+ALTER TABLE euler.layer OWNER TO euler;
 
 --
 -- TOC entry 294 (class 1259 OID 19355)
--- Name: layer_id_seq; Type: SEQUENCE; Schema: uniba; Owner: uniba
+-- Name: layer_id_seq; Type: SEQUENCE; Schema: euler; Owner: euler
 --
 
-CREATE SEQUENCE uniba.layer_id_seq
+CREATE SEQUENCE euler.layer_id_seq
     AS integer
     START WITH 1
     INCREMENT BY 1
@@ -971,23 +971,23 @@ CREATE SEQUENCE uniba.layer_id_seq
     CACHE 1;
 
 
-ALTER TABLE uniba.layer_id_seq OWNER TO uniba;
+ALTER TABLE euler.layer_id_seq OWNER TO euler;
 
 --
 -- TOC entry 5595 (class 0 OID 0)
 -- Dependencies: 294
--- Name: layer_id_seq; Type: SEQUENCE OWNED BY; Schema: uniba; Owner: uniba
+-- Name: layer_id_seq; Type: SEQUENCE OWNED BY; Schema: euler; Owner: euler
 --
 
-ALTER SEQUENCE uniba.layer_id_seq OWNED BY uniba.layer.id;
+ALTER SEQUENCE euler.layer_id_seq OWNED BY euler.layer.id;
 
 
 --
 -- TOC entry 295 (class 1259 OID 19357)
--- Name: meteo_stations; Type: TABLE; Schema: uniba; Owner: uniba
+-- Name: meteo_stations; Type: TABLE; Schema: euler; Owner: euler
 --
 
-CREATE TABLE uniba.meteo_stations (
+CREATE TABLE euler.meteo_stations (
     id text NOT NULL,
     create_date timestamp without time zone DEFAULT now(),
     update_date timestamp without time zone,
@@ -1002,14 +1002,14 @@ CREATE TABLE uniba.meteo_stations (
 );
 
 
-ALTER TABLE uniba.meteo_stations OWNER TO uniba;
+ALTER TABLE euler.meteo_stations OWNER TO euler;
 
 --
 -- TOC entry 296 (class 1259 OID 19364)
--- Name: meteo_stations_measure_id_seq; Type: SEQUENCE; Schema: uniba; Owner: uniba
+-- Name: meteo_stations_measure_id_seq; Type: SEQUENCE; Schema: euler; Owner: euler
 --
 
-CREATE SEQUENCE uniba.meteo_stations_measure_id_seq
+CREATE SEQUENCE euler.meteo_stations_measure_id_seq
     START WITH 1
     INCREMENT BY 1
     MINVALUE 0
@@ -1017,15 +1017,15 @@ CREATE SEQUENCE uniba.meteo_stations_measure_id_seq
     CACHE 1;
 
 
-ALTER TABLE uniba.meteo_stations_measure_id_seq OWNER TO uniba;
+ALTER TABLE euler.meteo_stations_measure_id_seq OWNER TO euler;
 
 --
 -- TOC entry 297 (class 1259 OID 19366)
--- Name: meteo_stations_measure; Type: TABLE; Schema: uniba; Owner: uniba
+-- Name: meteo_stations_measure; Type: TABLE; Schema: euler; Owner: euler
 --
 
-CREATE TABLE uniba.meteo_stations_measure (
-    id bigint DEFAULT nextval('uniba.meteo_stations_measure_id_seq'::regclass) NOT NULL,
+CREATE TABLE euler.meteo_stations_measure (
+    id bigint DEFAULT nextval('euler.meteo_stations_measure_id_seq'::regclass) NOT NULL,
     create_date timestamp without time zone DEFAULT now(),
     update_date timestamp without time zone,
     data date,
@@ -1035,14 +1035,14 @@ CREATE TABLE uniba.meteo_stations_measure (
 );
 
 
-ALTER TABLE uniba.meteo_stations_measure OWNER TO uniba;
+ALTER TABLE euler.meteo_stations_measure OWNER TO euler;
 
 --
 -- TOC entry 298 (class 1259 OID 19374)
--- Name: meteo_stations_measure_old; Type: TABLE; Schema: uniba; Owner: uniba
+-- Name: meteo_stations_measure_old; Type: TABLE; Schema: euler; Owner: euler
 --
 
-CREATE TABLE uniba.meteo_stations_measure_old (
+CREATE TABLE euler.meteo_stations_measure_old (
     id bigint NOT NULL,
     create_date timestamp without time zone DEFAULT now(),
     update_date timestamp without time zone,
@@ -1053,14 +1053,14 @@ CREATE TABLE uniba.meteo_stations_measure_old (
 );
 
 
-ALTER TABLE uniba.meteo_stations_measure_old OWNER TO uniba;
+ALTER TABLE euler.meteo_stations_measure_old OWNER TO euler;
 
 --
 -- TOC entry 299 (class 1259 OID 19381)
--- Name: meteo_stations_measure_old_id_seq; Type: SEQUENCE; Schema: uniba; Owner: uniba
+-- Name: meteo_stations_measure_old_id_seq; Type: SEQUENCE; Schema: euler; Owner: euler
 --
 
-CREATE SEQUENCE uniba.meteo_stations_measure_old_id_seq
+CREATE SEQUENCE euler.meteo_stations_measure_old_id_seq
     START WITH 0
     INCREMENT BY 1
     MINVALUE 0
@@ -1068,23 +1068,23 @@ CREATE SEQUENCE uniba.meteo_stations_measure_old_id_seq
     CACHE 1;
 
 
-ALTER TABLE uniba.meteo_stations_measure_old_id_seq OWNER TO uniba;
+ALTER TABLE euler.meteo_stations_measure_old_id_seq OWNER TO euler;
 
 --
 -- TOC entry 5596 (class 0 OID 0)
 -- Dependencies: 299
--- Name: meteo_stations_measure_old_id_seq; Type: SEQUENCE OWNED BY; Schema: uniba; Owner: uniba
+-- Name: meteo_stations_measure_old_id_seq; Type: SEQUENCE OWNED BY; Schema: euler; Owner: euler
 --
 
-ALTER SEQUENCE uniba.meteo_stations_measure_old_id_seq OWNED BY uniba.meteo_stations_measure_old.id;
+ALTER SEQUENCE euler.meteo_stations_measure_old_id_seq OWNED BY euler.meteo_stations_measure_old.id;
 
 
 --
 -- TOC entry 300 (class 1259 OID 19383)
--- Name: meteo_stations_old; Type: TABLE; Schema: uniba; Owner: uniba
+-- Name: meteo_stations_old; Type: TABLE; Schema: euler; Owner: euler
 --
 
-CREATE TABLE uniba.meteo_stations_old (
+CREATE TABLE euler.meteo_stations_old (
     id text NOT NULL,
     create_date timestamp without time zone DEFAULT now(),
     update_date timestamp without time zone,
@@ -1099,14 +1099,14 @@ CREATE TABLE uniba.meteo_stations_old (
 );
 
 
-ALTER TABLE uniba.meteo_stations_old OWNER TO uniba;
+ALTER TABLE euler.meteo_stations_old OWNER TO euler;
 
 --
 -- TOC entry 301 (class 1259 OID 19390)
--- Name: oauth_access_token; Type: TABLE; Schema: uniba; Owner: uniba
+-- Name: oauth_access_token; Type: TABLE; Schema: euler; Owner: euler
 --
 
-CREATE TABLE uniba.oauth_access_token (
+CREATE TABLE euler.oauth_access_token (
     token_id character varying(255),
     token bytea,
     authentication_id character varying(255) NOT NULL,
@@ -1117,14 +1117,14 @@ CREATE TABLE uniba.oauth_access_token (
 );
 
 
-ALTER TABLE uniba.oauth_access_token OWNER TO uniba;
+ALTER TABLE euler.oauth_access_token OWNER TO euler;
 
 --
 -- TOC entry 302 (class 1259 OID 19396)
--- Name: oauth_approvals; Type: TABLE; Schema: uniba; Owner: uniba
+-- Name: oauth_approvals; Type: TABLE; Schema: euler; Owner: euler
 --
 
-CREATE TABLE uniba.oauth_approvals (
+CREATE TABLE euler.oauth_approvals (
     userid character varying(255),
     clientid character varying(255),
     scope character varying(255),
@@ -1134,14 +1134,14 @@ CREATE TABLE uniba.oauth_approvals (
 );
 
 
-ALTER TABLE uniba.oauth_approvals OWNER TO uniba;
+ALTER TABLE euler.oauth_approvals OWNER TO euler;
 
 --
 -- TOC entry 303 (class 1259 OID 19404)
--- Name: oauth_client_details; Type: TABLE; Schema: uniba; Owner: uniba
+-- Name: oauth_client_details; Type: TABLE; Schema: euler; Owner: euler
 --
 
-CREATE TABLE uniba.oauth_client_details (
+CREATE TABLE euler.oauth_client_details (
     client_id character varying(255) NOT NULL,
     resource_ids character varying(255),
     client_secret character varying(255),
@@ -1156,14 +1156,14 @@ CREATE TABLE uniba.oauth_client_details (
 );
 
 
-ALTER TABLE uniba.oauth_client_details OWNER TO uniba;
+ALTER TABLE euler.oauth_client_details OWNER TO euler;
 
 --
 -- TOC entry 304 (class 1259 OID 19410)
--- Name: oauth_client_token; Type: TABLE; Schema: uniba; Owner: uniba
+-- Name: oauth_client_token; Type: TABLE; Schema: euler; Owner: euler
 --
 
-CREATE TABLE uniba.oauth_client_token (
+CREATE TABLE euler.oauth_client_token (
     token_id character varying(255),
     token bytea,
     authentication_id character varying(255) NOT NULL,
@@ -1172,41 +1172,41 @@ CREATE TABLE uniba.oauth_client_token (
 );
 
 
-ALTER TABLE uniba.oauth_client_token OWNER TO uniba;
+ALTER TABLE euler.oauth_client_token OWNER TO euler;
 
 --
 -- TOC entry 305 (class 1259 OID 19416)
--- Name: oauth_code; Type: TABLE; Schema: uniba; Owner: uniba
+-- Name: oauth_code; Type: TABLE; Schema: euler; Owner: euler
 --
 
-CREATE TABLE uniba.oauth_code (
+CREATE TABLE euler.oauth_code (
     code character varying(255),
     authentication bytea
 );
 
 
-ALTER TABLE uniba.oauth_code OWNER TO uniba;
+ALTER TABLE euler.oauth_code OWNER TO euler;
 
 --
 -- TOC entry 306 (class 1259 OID 19422)
--- Name: oauth_refresh_token; Type: TABLE; Schema: uniba; Owner: uniba
+-- Name: oauth_refresh_token; Type: TABLE; Schema: euler; Owner: euler
 --
 
-CREATE TABLE uniba.oauth_refresh_token (
+CREATE TABLE euler.oauth_refresh_token (
     token_id character varying(255),
     token bytea,
     authentication bytea
 );
 
 
-ALTER TABLE uniba.oauth_refresh_token OWNER TO uniba;
+ALTER TABLE euler.oauth_refresh_token OWNER TO euler;
 
 --
 -- TOC entry 307 (class 1259 OID 19428)
--- Name: organization; Type: TABLE; Schema: uniba; Owner: uniba
+-- Name: organization; Type: TABLE; Schema: euler; Owner: euler
 --
 
-CREATE TABLE uniba.organization (
+CREATE TABLE euler.organization (
     id integer NOT NULL,
     create_date timestamp without time zone DEFAULT now(),
     update_date timestamp without time zone,
@@ -1217,14 +1217,14 @@ CREATE TABLE uniba.organization (
 );
 
 
-ALTER TABLE uniba.organization OWNER TO uniba;
+ALTER TABLE euler.organization OWNER TO euler;
 
 --
 -- TOC entry 308 (class 1259 OID 19435)
--- Name: organization_id_seq; Type: SEQUENCE; Schema: uniba; Owner: uniba
+-- Name: organization_id_seq; Type: SEQUENCE; Schema: euler; Owner: euler
 --
 
-CREATE SEQUENCE uniba.organization_id_seq
+CREATE SEQUENCE euler.organization_id_seq
     AS integer
     START WITH 0
     INCREMENT BY 1
@@ -1233,23 +1233,23 @@ CREATE SEQUENCE uniba.organization_id_seq
     CACHE 1;
 
 
-ALTER TABLE uniba.organization_id_seq OWNER TO uniba;
+ALTER TABLE euler.organization_id_seq OWNER TO euler;
 
 --
 -- TOC entry 5597 (class 0 OID 0)
 -- Dependencies: 308
--- Name: organization_id_seq; Type: SEQUENCE OWNED BY; Schema: uniba; Owner: uniba
+-- Name: organization_id_seq; Type: SEQUENCE OWNED BY; Schema: euler; Owner: euler
 --
 
-ALTER SEQUENCE uniba.organization_id_seq OWNED BY uniba.organization.id;
+ALTER SEQUENCE euler.organization_id_seq OWNED BY euler.organization.id;
 
 
 --
 -- TOC entry 309 (class 1259 OID 19437)
--- Name: ps; Type: TABLE; Schema: uniba; Owner: uniba
+-- Name: ps; Type: TABLE; Schema: euler; Owner: euler
 --
 
-CREATE TABLE uniba.ps (
+CREATE TABLE euler.ps (
     create_date timestamp without time zone DEFAULT now(),
     update_date timestamp without time zone DEFAULT now(),
     coherence real,
@@ -1265,28 +1265,28 @@ CREATE TABLE uniba.ps (
 WITH (fillfactor='70', autovacuum_vacuum_scale_factor='0', autovacuum_vacuum_threshold='1000000', autovacuum_enabled='true', toast.autovacuum_enabled='true');
 
 
-ALTER TABLE uniba.ps OWNER TO uniba;
+ALTER TABLE euler.ps OWNER TO euler;
 
 --
 -- TOC entry 310 (class 1259 OID 19446)
--- Name: ps_measurement; Type: TABLE; Schema: uniba; Owner: uniba; Tablespace: hdd1
+-- Name: ps_measurement; Type: TABLE; Schema: euler; Owner: euler; Tablespace: hdd1
 --
 
-CREATE TABLE uniba.ps_measurement (
+CREATE TABLE euler.ps_measurement (
     measurement text,
     scatterer_id integer NOT NULL
 )
 WITH (fillfactor='70', autovacuum_vacuum_scale_factor='0', autovacuum_vacuum_threshold='1000000', autovacuum_enabled='true', toast.autovacuum_enabled='true');
 
 
-ALTER TABLE uniba.ps_measurement OWNER TO uniba;
+ALTER TABLE euler.ps_measurement OWNER TO euler;
 
 --
 -- TOC entry 311 (class 1259 OID 19452)
--- Name: role; Type: TABLE; Schema: uniba; Owner: uniba
+-- Name: role; Type: TABLE; Schema: euler; Owner: euler
 --
 
-CREATE TABLE uniba.role (
+CREATE TABLE euler.role (
     id bigint NOT NULL,
     create_date timestamp without time zone DEFAULT now(),
     update_date timestamp without time zone,
@@ -1295,27 +1295,27 @@ CREATE TABLE uniba.role (
 );
 
 
-ALTER TABLE uniba.role OWNER TO uniba;
+ALTER TABLE euler.role OWNER TO euler;
 
 --
 -- TOC entry 312 (class 1259 OID 19459)
--- Name: role_aoi; Type: TABLE; Schema: uniba; Owner: uniba
+-- Name: role_aoi; Type: TABLE; Schema: euler; Owner: euler
 --
 
-CREATE TABLE uniba.role_aoi (
+CREATE TABLE euler.role_aoi (
     role_id bigint NOT NULL,
     aoi_id integer NOT NULL
 );
 
 
-ALTER TABLE uniba.role_aoi OWNER TO uniba;
+ALTER TABLE euler.role_aoi OWNER TO euler;
 
 --
 -- TOC entry 313 (class 1259 OID 19462)
--- Name: role_id_seq; Type: SEQUENCE; Schema: uniba; Owner: uniba
+-- Name: role_id_seq; Type: SEQUENCE; Schema: euler; Owner: euler
 --
 
-CREATE SEQUENCE uniba.role_id_seq
+CREATE SEQUENCE euler.role_id_seq
     START WITH 0
     INCREMENT BY 1
     MINVALUE 0
@@ -1323,49 +1323,49 @@ CREATE SEQUENCE uniba.role_id_seq
     CACHE 1;
 
 
-ALTER TABLE uniba.role_id_seq OWNER TO uniba;
+ALTER TABLE euler.role_id_seq OWNER TO euler;
 
 --
 -- TOC entry 5598 (class 0 OID 0)
 -- Dependencies: 313
--- Name: role_id_seq; Type: SEQUENCE OWNED BY; Schema: uniba; Owner: uniba
+-- Name: role_id_seq; Type: SEQUENCE OWNED BY; Schema: euler; Owner: euler
 --
 
-ALTER SEQUENCE uniba.role_id_seq OWNED BY uniba.role.id;
+ALTER SEQUENCE euler.role_id_seq OWNED BY euler.role.id;
 
 
 --
 -- TOC entry 314 (class 1259 OID 19464)
--- Name: role_layer; Type: TABLE; Schema: uniba; Owner: uniba
+-- Name: role_layer; Type: TABLE; Schema: euler; Owner: euler
 --
 
-CREATE TABLE uniba.role_layer (
+CREATE TABLE euler.role_layer (
     role_id bigint NOT NULL,
     layer_id integer NOT NULL
 );
 
 
-ALTER TABLE uniba.role_layer OWNER TO uniba;
+ALTER TABLE euler.role_layer OWNER TO euler;
 
 --
 -- TOC entry 315 (class 1259 OID 19467)
--- Name: role_style; Type: TABLE; Schema: uniba; Owner: uniba
+-- Name: role_style; Type: TABLE; Schema: euler; Owner: euler
 --
 
-CREATE TABLE uniba.role_style (
+CREATE TABLE euler.role_style (
     role_id bigint NOT NULL,
     style_id integer NOT NULL
 );
 
 
-ALTER TABLE uniba.role_style OWNER TO uniba;
+ALTER TABLE euler.role_style OWNER TO euler;
 
 --
 -- TOC entry 316 (class 1259 OID 19470)
--- Name: scatterer; Type: TABLE; Schema: uniba; Owner: uniba
+-- Name: scatterer; Type: TABLE; Schema: euler; Owner: euler
 --
 
-CREATE TABLE uniba.scatterer (
+CREATE TABLE euler.scatterer (
     id integer NOT NULL,
     code text NOT NULL,
     dataset_id integer NOT NULL,
@@ -1374,14 +1374,14 @@ CREATE TABLE uniba.scatterer (
 WITH (fillfactor='70');
 
 
-ALTER TABLE uniba.scatterer OWNER TO uniba;
+ALTER TABLE euler.scatterer OWNER TO euler;
 
 --
 -- TOC entry 317 (class 1259 OID 19476)
--- Name: scatterer_id_seq; Type: SEQUENCE; Schema: uniba; Owner: uniba
+-- Name: scatterer_id_seq; Type: SEQUENCE; Schema: euler; Owner: euler
 --
 
-CREATE SEQUENCE uniba.scatterer_id_seq
+CREATE SEQUENCE euler.scatterer_id_seq
     START WITH 0
     INCREMENT BY 1
     MINVALUE 0
@@ -1389,23 +1389,23 @@ CREATE SEQUENCE uniba.scatterer_id_seq
     CACHE 1;
 
 
-ALTER TABLE uniba.scatterer_id_seq OWNER TO uniba;
+ALTER TABLE euler.scatterer_id_seq OWNER TO euler;
 
 --
 -- TOC entry 5599 (class 0 OID 0)
 -- Dependencies: 317
--- Name: scatterer_id_seq; Type: SEQUENCE OWNED BY; Schema: uniba; Owner: uniba
+-- Name: scatterer_id_seq; Type: SEQUENCE OWNED BY; Schema: euler; Owner: euler
 --
 
-ALTER SEQUENCE uniba.scatterer_id_seq OWNED BY uniba.scatterer.id;
+ALTER SEQUENCE euler.scatterer_id_seq OWNED BY euler.scatterer.id;
 
 
 --
 -- TOC entry 318 (class 1259 OID 19478)
--- Name: sensor; Type: TABLE; Schema: uniba; Owner: uniba
+-- Name: sensor; Type: TABLE; Schema: euler; Owner: euler
 --
 
-CREATE TABLE uniba.sensor (
+CREATE TABLE euler.sensor (
     id integer NOT NULL,
     create_date timestamp without time zone DEFAULT now(),
     update_date timestamp without time zone,
@@ -1415,14 +1415,14 @@ CREATE TABLE uniba.sensor (
 );
 
 
-ALTER TABLE uniba.sensor OWNER TO uniba;
+ALTER TABLE euler.sensor OWNER TO euler;
 
 --
 -- TOC entry 319 (class 1259 OID 19486)
--- Name: sensor_id_seq; Type: SEQUENCE; Schema: uniba; Owner: uniba
+-- Name: sensor_id_seq; Type: SEQUENCE; Schema: euler; Owner: euler
 --
 
-CREATE SEQUENCE uniba.sensor_id_seq
+CREATE SEQUENCE euler.sensor_id_seq
     AS integer
     START WITH 1
     INCREMENT BY 1
@@ -1431,23 +1431,23 @@ CREATE SEQUENCE uniba.sensor_id_seq
     CACHE 1;
 
 
-ALTER TABLE uniba.sensor_id_seq OWNER TO uniba;
+ALTER TABLE euler.sensor_id_seq OWNER TO euler;
 
 --
 -- TOC entry 5600 (class 0 OID 0)
 -- Dependencies: 319
--- Name: sensor_id_seq; Type: SEQUENCE OWNED BY; Schema: uniba; Owner: uniba
+-- Name: sensor_id_seq; Type: SEQUENCE OWNED BY; Schema: euler; Owner: euler
 --
 
-ALTER SEQUENCE uniba.sensor_id_seq OWNED BY uniba.sensor.id;
+ALTER SEQUENCE euler.sensor_id_seq OWNED BY euler.sensor.id;
 
 
 --
 -- TOC entry 320 (class 1259 OID 19488)
--- Name: style; Type: TABLE; Schema: uniba; Owner: uniba
+-- Name: style; Type: TABLE; Schema: euler; Owner: euler
 --
 
-CREATE TABLE uniba.style (
+CREATE TABLE euler.style (
     id integer NOT NULL,
     create_date timestamp without time zone DEFAULT now(),
     update_date timestamp without time zone,
@@ -1457,14 +1457,14 @@ CREATE TABLE uniba.style (
 );
 
 
-ALTER TABLE uniba.style OWNER TO uniba;
+ALTER TABLE euler.style OWNER TO euler;
 
 --
 -- TOC entry 321 (class 1259 OID 19495)
--- Name: style_id_seq; Type: SEQUENCE; Schema: uniba; Owner: uniba
+-- Name: style_id_seq; Type: SEQUENCE; Schema: euler; Owner: euler
 --
 
-CREATE SEQUENCE uniba.style_id_seq
+CREATE SEQUENCE euler.style_id_seq
     AS integer
     START WITH 0
     INCREMENT BY 1
@@ -1473,23 +1473,23 @@ CREATE SEQUENCE uniba.style_id_seq
     CACHE 1;
 
 
-ALTER TABLE uniba.style_id_seq OWNER TO uniba;
+ALTER TABLE euler.style_id_seq OWNER TO euler;
 
 --
 -- TOC entry 5601 (class 0 OID 0)
 -- Dependencies: 321
--- Name: style_id_seq; Type: SEQUENCE OWNED BY; Schema: uniba; Owner: uniba
+-- Name: style_id_seq; Type: SEQUENCE OWNED BY; Schema: euler; Owner: euler
 --
 
-ALTER SEQUENCE uniba.style_id_seq OWNED BY uniba.style.id;
+ALTER SEQUENCE euler.style_id_seq OWNED BY euler.style.id;
 
 
 --
 -- TOC entry 322 (class 1259 OID 19497)
--- Name: user; Type: TABLE; Schema: uniba; Owner: uniba
+-- Name: user; Type: TABLE; Schema: euler; Owner: euler
 --
 
-CREATE TABLE uniba."user" (
+CREATE TABLE euler."user" (
     id integer NOT NULL,
     create_date timestamp without time zone DEFAULT now(),
     update_date timestamp without time zone,
@@ -1506,27 +1506,27 @@ CREATE TABLE uniba."user" (
 );
 
 
-ALTER TABLE uniba."user" OWNER TO uniba;
+ALTER TABLE euler."user" OWNER TO euler;
 
 --
 -- TOC entry 323 (class 1259 OID 19504)
--- Name: user_aoi; Type: TABLE; Schema: uniba; Owner: uniba
+-- Name: user_aoi; Type: TABLE; Schema: euler; Owner: euler
 --
 
-CREATE TABLE uniba.user_aoi (
+CREATE TABLE euler.user_aoi (
     user_id integer NOT NULL,
     aoi_id integer NOT NULL
 );
 
 
-ALTER TABLE uniba.user_aoi OWNER TO uniba;
+ALTER TABLE euler.user_aoi OWNER TO euler;
 
 --
 -- TOC entry 324 (class 1259 OID 19507)
--- Name: user_id_seq; Type: SEQUENCE; Schema: uniba; Owner: uniba
+-- Name: user_id_seq; Type: SEQUENCE; Schema: euler; Owner: euler
 --
 
-CREATE SEQUENCE uniba.user_id_seq
+CREATE SEQUENCE euler.user_id_seq
     AS integer
     START WITH 0
     INCREMENT BY 1
@@ -1535,1046 +1535,1046 @@ CREATE SEQUENCE uniba.user_id_seq
     CACHE 1;
 
 
-ALTER TABLE uniba.user_id_seq OWNER TO uniba;
+ALTER TABLE euler.user_id_seq OWNER TO euler;
 
 --
 -- TOC entry 5602 (class 0 OID 0)
 -- Dependencies: 324
--- Name: user_id_seq; Type: SEQUENCE OWNED BY; Schema: uniba; Owner: uniba
+-- Name: user_id_seq; Type: SEQUENCE OWNED BY; Schema: euler; Owner: euler
 --
 
-ALTER SEQUENCE uniba.user_id_seq OWNED BY uniba."user".id;
+ALTER SEQUENCE euler.user_id_seq OWNED BY euler."user".id;
 
 
 --
 -- TOC entry 325 (class 1259 OID 19509)
--- Name: user_layer; Type: TABLE; Schema: uniba; Owner: uniba
+-- Name: user_layer; Type: TABLE; Schema: euler; Owner: euler
 --
 
-CREATE TABLE uniba.user_layer (
+CREATE TABLE euler.user_layer (
     user_id integer NOT NULL,
     layer_id integer NOT NULL
 );
 
 
-ALTER TABLE uniba.user_layer OWNER TO uniba;
+ALTER TABLE euler.user_layer OWNER TO euler;
 
 --
 -- TOC entry 326 (class 1259 OID 19512)
--- Name: user_role; Type: TABLE; Schema: uniba; Owner: uniba
+-- Name: user_role; Type: TABLE; Schema: euler; Owner: euler
 --
 
-CREATE TABLE uniba.user_role (
+CREATE TABLE euler.user_role (
     user_id integer NOT NULL,
     role_id bigint NOT NULL
 );
 
 
-ALTER TABLE uniba.user_role OWNER TO uniba;
+ALTER TABLE euler.user_role OWNER TO euler;
 
 --
 -- TOC entry 327 (class 1259 OID 19515)
--- Name: user_style; Type: TABLE; Schema: uniba; Owner: uniba
+-- Name: user_style; Type: TABLE; Schema: euler; Owner: euler
 --
 
-CREATE TABLE uniba.user_style (
+CREATE TABLE euler.user_style (
     user_id integer NOT NULL,
     style_id integer NOT NULL
 );
 
 
-ALTER TABLE uniba.user_style OWNER TO uniba;
+ALTER TABLE euler.user_style OWNER TO euler;
 
 --
 -- TOC entry 5145 (class 2604 OID 19518)
--- Name: aoi id; Type: DEFAULT; Schema: uniba; Owner: uniba
+-- Name: aoi id; Type: DEFAULT; Schema: euler; Owner: euler
 --
 
-ALTER TABLE ONLY uniba.aoi ALTER COLUMN id SET DEFAULT nextval('uniba.aoi_id_seq'::regclass);
+ALTER TABLE ONLY euler.aoi ALTER COLUMN id SET DEFAULT nextval('euler.aoi_id_seq'::regclass);
 
 
 --
 -- TOC entry 5183 (class 2604 OID 19784)
--- Name: bookmark id; Type: DEFAULT; Schema: uniba; Owner: uniba
+-- Name: bookmark id; Type: DEFAULT; Schema: euler; Owner: euler
 --
 
-ALTER TABLE ONLY uniba.bookmark ALTER COLUMN id SET DEFAULT nextval('uniba.bookmark_id_seq'::regclass);
+ALTER TABLE ONLY euler.bookmark ALTER COLUMN id SET DEFAULT nextval('euler.bookmark_id_seq'::regclass);
 
 
 --
 -- TOC entry 5147 (class 2604 OID 19519)
--- Name: crop id; Type: DEFAULT; Schema: uniba; Owner: uniba
+-- Name: crop id; Type: DEFAULT; Schema: euler; Owner: euler
 --
 
-ALTER TABLE ONLY uniba.crop ALTER COLUMN id SET DEFAULT nextval('uniba.crop_id_seq'::regclass);
+ALTER TABLE ONLY euler.crop ALTER COLUMN id SET DEFAULT nextval('euler.crop_id_seq'::regclass);
 
 
 --
 -- TOC entry 5149 (class 2604 OID 19520)
--- Name: crop_parameter id; Type: DEFAULT; Schema: uniba; Owner: uniba
+-- Name: crop_parameter id; Type: DEFAULT; Schema: euler; Owner: euler
 --
 
-ALTER TABLE ONLY uniba.crop_parameter ALTER COLUMN id SET DEFAULT nextval('uniba.crop_parameter_id_seq'::regclass);
+ALTER TABLE ONLY euler.crop_parameter ALTER COLUMN id SET DEFAULT nextval('euler.crop_parameter_id_seq'::regclass);
 
 
 --
 -- TOC entry 5151 (class 2604 OID 19521)
--- Name: dataset id; Type: DEFAULT; Schema: uniba; Owner: uniba
+-- Name: dataset id; Type: DEFAULT; Schema: euler; Owner: euler
 --
 
-ALTER TABLE ONLY uniba.dataset ALTER COLUMN id SET DEFAULT nextval('uniba.dataset_id_seq'::regclass);
+ALTER TABLE ONLY euler.dataset ALTER COLUMN id SET DEFAULT nextval('euler.dataset_id_seq'::regclass);
 
 
 --
 -- TOC entry 5153 (class 2604 OID 19522)
--- Name: deal id; Type: DEFAULT; Schema: uniba; Owner: uniba
+-- Name: deal id; Type: DEFAULT; Schema: euler; Owner: euler
 --
 
-ALTER TABLE ONLY uniba.deal ALTER COLUMN id SET DEFAULT nextval('uniba.deal_id_seq'::regclass);
+ALTER TABLE ONLY euler.deal ALTER COLUMN id SET DEFAULT nextval('euler.deal_id_seq'::regclass);
 
 
 --
 -- TOC entry 5159 (class 2604 OID 19523)
--- Name: layer id; Type: DEFAULT; Schema: uniba; Owner: uniba
+-- Name: layer id; Type: DEFAULT; Schema: euler; Owner: euler
 --
 
-ALTER TABLE ONLY uniba.layer ALTER COLUMN id SET DEFAULT nextval('uniba.layer_id_seq'::regclass);
+ALTER TABLE ONLY euler.layer ALTER COLUMN id SET DEFAULT nextval('euler.layer_id_seq'::regclass);
 
 
 --
 -- TOC entry 5164 (class 2604 OID 19524)
--- Name: meteo_stations_measure_old id; Type: DEFAULT; Schema: uniba; Owner: uniba
+-- Name: meteo_stations_measure_old id; Type: DEFAULT; Schema: euler; Owner: euler
 --
 
-ALTER TABLE ONLY uniba.meteo_stations_measure_old ALTER COLUMN id SET DEFAULT nextval('uniba.meteo_stations_measure_old_id_seq'::regclass);
+ALTER TABLE ONLY euler.meteo_stations_measure_old ALTER COLUMN id SET DEFAULT nextval('euler.meteo_stations_measure_old_id_seq'::regclass);
 
 
 --
 -- TOC entry 5169 (class 2604 OID 19525)
--- Name: organization id; Type: DEFAULT; Schema: uniba; Owner: uniba
+-- Name: organization id; Type: DEFAULT; Schema: euler; Owner: euler
 --
 
-ALTER TABLE ONLY uniba.organization ALTER COLUMN id SET DEFAULT nextval('uniba.organization_id_seq'::regclass);
+ALTER TABLE ONLY euler.organization ALTER COLUMN id SET DEFAULT nextval('euler.organization_id_seq'::regclass);
 
 
 --
 -- TOC entry 5174 (class 2604 OID 19526)
--- Name: role id; Type: DEFAULT; Schema: uniba; Owner: uniba
+-- Name: role id; Type: DEFAULT; Schema: euler; Owner: euler
 --
 
-ALTER TABLE ONLY uniba.role ALTER COLUMN id SET DEFAULT nextval('uniba.role_id_seq'::regclass);
+ALTER TABLE ONLY euler.role ALTER COLUMN id SET DEFAULT nextval('euler.role_id_seq'::regclass);
 
 
 --
 -- TOC entry 5175 (class 2604 OID 19527)
--- Name: scatterer id; Type: DEFAULT; Schema: uniba; Owner: uniba
+-- Name: scatterer id; Type: DEFAULT; Schema: euler; Owner: euler
 --
 
-ALTER TABLE ONLY uniba.scatterer ALTER COLUMN id SET DEFAULT nextval('uniba.scatterer_id_seq'::regclass);
+ALTER TABLE ONLY euler.scatterer ALTER COLUMN id SET DEFAULT nextval('euler.scatterer_id_seq'::regclass);
 
 
 --
 -- TOC entry 5178 (class 2604 OID 19528)
--- Name: sensor id; Type: DEFAULT; Schema: uniba; Owner: uniba
+-- Name: sensor id; Type: DEFAULT; Schema: euler; Owner: euler
 --
 
-ALTER TABLE ONLY uniba.sensor ALTER COLUMN id SET DEFAULT nextval('uniba.sensor_id_seq'::regclass);
+ALTER TABLE ONLY euler.sensor ALTER COLUMN id SET DEFAULT nextval('euler.sensor_id_seq'::regclass);
 
 
 --
 -- TOC entry 5180 (class 2604 OID 19529)
--- Name: style id; Type: DEFAULT; Schema: uniba; Owner: uniba
+-- Name: style id; Type: DEFAULT; Schema: euler; Owner: euler
 --
 
-ALTER TABLE ONLY uniba.style ALTER COLUMN id SET DEFAULT nextval('uniba.style_id_seq'::regclass);
+ALTER TABLE ONLY euler.style ALTER COLUMN id SET DEFAULT nextval('euler.style_id_seq'::regclass);
 
 
 --
 -- TOC entry 5182 (class 2604 OID 19530)
--- Name: user id; Type: DEFAULT; Schema: uniba; Owner: uniba
+-- Name: user id; Type: DEFAULT; Schema: euler; Owner: euler
 --
 
-ALTER TABLE ONLY uniba."user" ALTER COLUMN id SET DEFAULT nextval('uniba.user_id_seq'::regclass);
+ALTER TABLE ONLY euler."user" ALTER COLUMN id SET DEFAULT nextval('euler.user_id_seq'::regclass);
 
 
 --
 -- TOC entry 5306 (class 2606 OID 19532)
--- Name: aoi aoi_pkey; Type: CONSTRAINT; Schema: uniba; Owner: uniba
+-- Name: aoi aoi_pkey; Type: CONSTRAINT; Schema: euler; Owner: euler
 --
 
-ALTER TABLE ONLY uniba.aoi
+ALTER TABLE ONLY euler.aoi
     ADD CONSTRAINT aoi_pkey PRIMARY KEY (id);
 
 
 --
 -- TOC entry 5392 (class 2606 OID 19789)
--- Name: bookmark bookmark_pkey; Type: CONSTRAINT; Schema: uniba; Owner: uniba
+-- Name: bookmark bookmark_pkey; Type: CONSTRAINT; Schema: euler; Owner: euler
 --
 
-ALTER TABLE ONLY uniba.bookmark
+ALTER TABLE ONLY euler.bookmark
     ADD CONSTRAINT bookmark_pkey PRIMARY KEY (id);
 
 
 --
 -- TOC entry 5313 (class 2606 OID 19534)
--- Name: crop_blacklist crop_blacklist_pkey; Type: CONSTRAINT; Schema: uniba; Owner: uniba
+-- Name: crop_blacklist crop_blacklist_pkey; Type: CONSTRAINT; Schema: euler; Owner: euler
 --
 
-ALTER TABLE ONLY uniba.crop_blacklist
+ALTER TABLE ONLY euler.crop_blacklist
     ADD CONSTRAINT crop_blacklist_pkey PRIMARY KEY (organization_id, crop_id);
 
 
 --
 -- TOC entry 5308 (class 2606 OID 19536)
--- Name: crop crop_dataset_id_code_key; Type: CONSTRAINT; Schema: uniba; Owner: uniba
+-- Name: crop crop_dataset_id_code_key; Type: CONSTRAINT; Schema: euler; Owner: euler
 --
 
-ALTER TABLE ONLY uniba.crop
+ALTER TABLE ONLY euler.crop
     ADD CONSTRAINT crop_dataset_id_code_key UNIQUE (dataset_id, code);
 
 
 --
 -- TOC entry 5315 (class 2606 OID 19538)
--- Name: crop_parameter crop_parameter_crop_id_type_key; Type: CONSTRAINT; Schema: uniba; Owner: uniba
+-- Name: crop_parameter crop_parameter_crop_id_type_key; Type: CONSTRAINT; Schema: euler; Owner: euler
 --
 
-ALTER TABLE ONLY uniba.crop_parameter
+ALTER TABLE ONLY euler.crop_parameter
     ADD CONSTRAINT crop_parameter_crop_id_type_key UNIQUE (crop_id, type);
 
 
 --
 -- TOC entry 5317 (class 2606 OID 19540)
--- Name: crop_parameter crop_parameter_id_pkey; Type: CONSTRAINT; Schema: uniba; Owner: uniba
+-- Name: crop_parameter crop_parameter_id_pkey; Type: CONSTRAINT; Schema: euler; Owner: euler
 --
 
-ALTER TABLE ONLY uniba.crop_parameter
+ALTER TABLE ONLY euler.crop_parameter
     ADD CONSTRAINT crop_parameter_id_pkey PRIMARY KEY (id);
 
 
 --
 -- TOC entry 5311 (class 2606 OID 19542)
--- Name: crop crop_pkey; Type: CONSTRAINT; Schema: uniba; Owner: uniba
+-- Name: crop crop_pkey; Type: CONSTRAINT; Schema: euler; Owner: euler
 --
 
-ALTER TABLE ONLY uniba.crop
+ALTER TABLE ONLY euler.crop
     ADD CONSTRAINT crop_pkey PRIMARY KEY (id);
 
 
 --
 -- TOC entry 5319 (class 2606 OID 19544)
--- Name: dataset dataset_pkey; Type: CONSTRAINT; Schema: uniba; Owner: uniba
+-- Name: dataset dataset_pkey; Type: CONSTRAINT; Schema: euler; Owner: euler
 --
 
-ALTER TABLE ONLY uniba.dataset
+ALTER TABLE ONLY euler.dataset
     ADD CONSTRAINT dataset_pkey PRIMARY KEY (id);
 
 
 --
 -- TOC entry 5321 (class 2606 OID 19546)
--- Name: dataset dataset_sensor_id_supermaster_uid_beam_key; Type: CONSTRAINT; Schema: uniba; Owner: uniba
+-- Name: dataset dataset_sensor_id_supermaster_uid_beam_key; Type: CONSTRAINT; Schema: euler; Owner: euler
 --
 
-ALTER TABLE ONLY uniba.dataset
+ALTER TABLE ONLY euler.dataset
     ADD CONSTRAINT dataset_sensor_id_supermaster_uid_beam_key UNIQUE (sensor_id, supermaster_uid, beam);
 
 
 --
 -- TOC entry 5323 (class 2606 OID 19548)
--- Name: deal deal_id_pkey; Type: CONSTRAINT; Schema: uniba; Owner: uniba
+-- Name: deal deal_id_pkey; Type: CONSTRAINT; Schema: euler; Owner: euler
 --
 
-ALTER TABLE ONLY uniba.deal
+ALTER TABLE ONLY euler.deal
     ADD CONSTRAINT deal_id_pkey PRIMARY KEY (id);
 
 --
 -- TOC entry 5330 (class 2606 OID 19550)
--- Name: ds_measurement ds_measurement_pkey; Type: CONSTRAINT; Schema: uniba; Owner: uniba; Tablespace: hdd1
+-- Name: ds_measurement ds_measurement_pkey; Type: CONSTRAINT; Schema: euler; Owner: euler; Tablespace: hdd1
 --
 
-ALTER TABLE ONLY uniba.ds_measurement
+ALTER TABLE ONLY euler.ds_measurement
     ADD CONSTRAINT ds_measurement_pkey PRIMARY KEY (scatterer_id) WITH (fillfactor='70');
 
 --
 -- TOC entry 5328 (class 2606 OID 19552)
--- Name: ds ds_pkey; Type: CONSTRAINT; Schema: uniba; Owner: uniba
+-- Name: ds ds_pkey; Type: CONSTRAINT; Schema: euler; Owner: euler
 --
 
-ALTER TABLE ONLY uniba.ds
+ALTER TABLE ONLY euler.ds
     ADD CONSTRAINT ds_pkey PRIMARY KEY (scatterer_id) WITH (fillfactor='70');
 
 
 --
 -- TOC entry 5332 (class 2606 OID 19554)
--- Name: layer layer_id_pkey; Type: CONSTRAINT; Schema: uniba; Owner: uniba
+-- Name: layer layer_id_pkey; Type: CONSTRAINT; Schema: euler; Owner: euler
 --
 
-ALTER TABLE ONLY uniba.layer
+ALTER TABLE ONLY euler.layer
     ADD CONSTRAINT layer_id_pkey PRIMARY KEY (id);
 
 
 --
 -- TOC entry 5334 (class 2606 OID 19556)
--- Name: meteo_stations meteo_stations_id_pkey; Type: CONSTRAINT; Schema: uniba; Owner: uniba
+-- Name: meteo_stations meteo_stations_id_pkey; Type: CONSTRAINT; Schema: euler; Owner: euler
 --
 
-ALTER TABLE ONLY uniba.meteo_stations
+ALTER TABLE ONLY euler.meteo_stations
     ADD CONSTRAINT meteo_stations_id_pkey PRIMARY KEY (id);
 
 
 --
 -- TOC entry 5336 (class 2606 OID 19558)
--- Name: meteo_stations_measure meteo_stations_measure_id_pkey; Type: CONSTRAINT; Schema: uniba; Owner: uniba
+-- Name: meteo_stations_measure meteo_stations_measure_id_pkey; Type: CONSTRAINT; Schema: euler; Owner: euler
 --
 
-ALTER TABLE ONLY uniba.meteo_stations_measure
+ALTER TABLE ONLY euler.meteo_stations_measure
     ADD CONSTRAINT meteo_stations_measure_id_pkey PRIMARY KEY (id);
 
 
 --
 -- TOC entry 5339 (class 2606 OID 19560)
--- Name: meteo_stations_measure_old meteo_stations_measure_old_id_pkey; Type: CONSTRAINT; Schema: uniba; Owner: uniba
+-- Name: meteo_stations_measure_old meteo_stations_measure_old_id_pkey; Type: CONSTRAINT; Schema: euler; Owner: euler
 --
 
-ALTER TABLE ONLY uniba.meteo_stations_measure_old
+ALTER TABLE ONLY euler.meteo_stations_measure_old
     ADD CONSTRAINT meteo_stations_measure_old_id_pkey PRIMARY KEY (id);
 
 
 --
 -- TOC entry 5342 (class 2606 OID 19562)
--- Name: meteo_stations_old meteo_stations_old_id_pkey; Type: CONSTRAINT; Schema: uniba; Owner: uniba
+-- Name: meteo_stations_old meteo_stations_old_id_pkey; Type: CONSTRAINT; Schema: euler; Owner: euler
 --
 
-ALTER TABLE ONLY uniba.meteo_stations_old
+ALTER TABLE ONLY euler.meteo_stations_old
     ADD CONSTRAINT meteo_stations_old_id_pkey PRIMARY KEY (id);
 
 
 --
 -- TOC entry 5344 (class 2606 OID 19564)
--- Name: oauth_access_token oauth_access_token_authentication_id_pkey; Type: CONSTRAINT; Schema: uniba; Owner: uniba
+-- Name: oauth_access_token oauth_access_token_authentication_id_pkey; Type: CONSTRAINT; Schema: euler; Owner: euler
 --
 
-ALTER TABLE ONLY uniba.oauth_access_token
+ALTER TABLE ONLY euler.oauth_access_token
     ADD CONSTRAINT oauth_access_token_authentication_id_pkey PRIMARY KEY (authentication_id);
 
 
 --
 -- TOC entry 5346 (class 2606 OID 19566)
--- Name: oauth_client_details oauth_client_details_client_id_pkey; Type: CONSTRAINT; Schema: uniba; Owner: uniba
+-- Name: oauth_client_details oauth_client_details_client_id_pkey; Type: CONSTRAINT; Schema: euler; Owner: euler
 --
 
-ALTER TABLE ONLY uniba.oauth_client_details
+ALTER TABLE ONLY euler.oauth_client_details
     ADD CONSTRAINT oauth_client_details_client_id_pkey PRIMARY KEY (client_id);
 
 
 --
 -- TOC entry 5348 (class 2606 OID 19568)
--- Name: oauth_client_token oauth_client_token_authentication_id_pkey; Type: CONSTRAINT; Schema: uniba; Owner: uniba
+-- Name: oauth_client_token oauth_client_token_authentication_id_pkey; Type: CONSTRAINT; Schema: euler; Owner: euler
 --
 
-ALTER TABLE ONLY uniba.oauth_client_token
+ALTER TABLE ONLY euler.oauth_client_token
     ADD CONSTRAINT oauth_client_token_authentication_id_pkey PRIMARY KEY (authentication_id);
 
 
 --
 -- TOC entry 5351 (class 2606 OID 19570)
--- Name: organization organization_id_pkey; Type: CONSTRAINT; Schema: uniba; Owner: uniba
+-- Name: organization organization_id_pkey; Type: CONSTRAINT; Schema: euler; Owner: euler
 --
 
-ALTER TABLE ONLY uniba.organization
+ALTER TABLE ONLY euler.organization
     ADD CONSTRAINT organization_id_pkey PRIMARY KEY (id);
 
 --
 -- TOC entry 5356 (class 2606 OID 19572)
--- Name: ps_measurement ps_measurement_pkey; Type: CONSTRAINT; Schema: uniba; Owner: uniba; Tablespace: hdd1
+-- Name: ps_measurement ps_measurement_pkey; Type: CONSTRAINT; Schema: euler; Owner: euler; Tablespace: hdd1
 --
 
-ALTER TABLE ONLY uniba.ps_measurement
+ALTER TABLE ONLY euler.ps_measurement
     ADD CONSTRAINT ps_measurement_pkey PRIMARY KEY (scatterer_id) WITH (fillfactor='70');
 
 --
 -- TOC entry 5354 (class 2606 OID 19574)
--- Name: ps ps_pkey; Type: CONSTRAINT; Schema: uniba; Owner: uniba
+-- Name: ps ps_pkey; Type: CONSTRAINT; Schema: euler; Owner: euler
 --
 
-ALTER TABLE ONLY uniba.ps
+ALTER TABLE ONLY euler.ps
     ADD CONSTRAINT ps_pkey PRIMARY KEY (scatterer_id) WITH (fillfactor='70');
 
 
 --
 -- TOC entry 5360 (class 2606 OID 19576)
--- Name: role_aoi role_aoi_role_id_aoi_id_pkey; Type: CONSTRAINT; Schema: uniba; Owner: uniba
+-- Name: role_aoi role_aoi_role_id_aoi_id_pkey; Type: CONSTRAINT; Schema: euler; Owner: euler
 --
 
-ALTER TABLE ONLY uniba.role_aoi
+ALTER TABLE ONLY euler.role_aoi
     ADD CONSTRAINT role_aoi_role_id_aoi_id_pkey PRIMARY KEY (role_id, aoi_id);
 
 
 --
 -- TOC entry 5358 (class 2606 OID 19578)
--- Name: role role_id_pkey; Type: CONSTRAINT; Schema: uniba; Owner: uniba
+-- Name: role role_id_pkey; Type: CONSTRAINT; Schema: euler; Owner: euler
 --
 
-ALTER TABLE ONLY uniba.role
+ALTER TABLE ONLY euler.role
     ADD CONSTRAINT role_id_pkey PRIMARY KEY (id);
 
 
 --
 -- TOC entry 5362 (class 2606 OID 19580)
--- Name: role_layer role_layer_role_id_layer_id_pkey; Type: CONSTRAINT; Schema: uniba; Owner: uniba
+-- Name: role_layer role_layer_role_id_layer_id_pkey; Type: CONSTRAINT; Schema: euler; Owner: euler
 --
 
-ALTER TABLE ONLY uniba.role_layer
+ALTER TABLE ONLY euler.role_layer
     ADD CONSTRAINT role_layer_role_id_layer_id_pkey PRIMARY KEY (role_id, layer_id);
 
 
 --
 -- TOC entry 5364 (class 2606 OID 19582)
--- Name: role_style role_style_role_id_style_id_pkey; Type: CONSTRAINT; Schema: uniba; Owner: uniba
+-- Name: role_style role_style_role_id_style_id_pkey; Type: CONSTRAINT; Schema: euler; Owner: euler
 --
 
-ALTER TABLE ONLY uniba.role_style
+ALTER TABLE ONLY euler.role_style
     ADD CONSTRAINT role_style_role_id_style_id_pkey PRIMARY KEY (role_id, style_id);
 
 
 --
 -- TOC entry 5368 (class 2606 OID 19584)
--- Name: scatterer scatterer_dataset_id_code_key; Type: CONSTRAINT; Schema: uniba; Owner: uniba
+-- Name: scatterer scatterer_dataset_id_code_key; Type: CONSTRAINT; Schema: euler; Owner: euler
 --
 
-ALTER TABLE ONLY uniba.scatterer
+ALTER TABLE ONLY euler.scatterer
     ADD CONSTRAINT scatterer_dataset_id_code_key UNIQUE (dataset_id, code) WITH (fillfactor='70');
 
 
 --
 -- TOC entry 5371 (class 2606 OID 19586)
--- Name: scatterer scatterer_pkey; Type: CONSTRAINT; Schema: uniba; Owner: uniba
+-- Name: scatterer scatterer_pkey; Type: CONSTRAINT; Schema: euler; Owner: euler
 --
 
-ALTER TABLE ONLY uniba.scatterer
+ALTER TABLE ONLY euler.scatterer
     ADD CONSTRAINT scatterer_pkey PRIMARY KEY (id) WITH (fillfactor='70');
 
 
 --
 -- TOC entry 5373 (class 2606 OID 19588)
--- Name: sensor sensor_code_key; Type: CONSTRAINT; Schema: uniba; Owner: uniba
+-- Name: sensor sensor_code_key; Type: CONSTRAINT; Schema: euler; Owner: euler
 --
 
-ALTER TABLE ONLY uniba.sensor
+ALTER TABLE ONLY euler.sensor
     ADD CONSTRAINT sensor_code_key UNIQUE (code);
 
 
 --
 -- TOC entry 5375 (class 2606 OID 19590)
--- Name: sensor sensor_pkey; Type: CONSTRAINT; Schema: uniba; Owner: uniba
+-- Name: sensor sensor_pkey; Type: CONSTRAINT; Schema: euler; Owner: euler
 --
 
-ALTER TABLE ONLY uniba.sensor
+ALTER TABLE ONLY euler.sensor
     ADD CONSTRAINT sensor_pkey PRIMARY KEY (id);
 
 
 --
 -- TOC entry 5377 (class 2606 OID 19592)
--- Name: style style_id_pkey; Type: CONSTRAINT; Schema: uniba; Owner: uniba
+-- Name: style style_id_pkey; Type: CONSTRAINT; Schema: euler; Owner: euler
 --
 
-ALTER TABLE ONLY uniba.style
+ALTER TABLE ONLY euler.style
     ADD CONSTRAINT style_id_pkey PRIMARY KEY (id);
 
 
 --
 -- TOC entry 5384 (class 2606 OID 19594)
--- Name: user_aoi user_aoi_user_id_aoi_id_pkey; Type: CONSTRAINT; Schema: uniba; Owner: uniba
+-- Name: user_aoi user_aoi_user_id_aoi_id_pkey; Type: CONSTRAINT; Schema: euler; Owner: euler
 --
 
-ALTER TABLE ONLY uniba.user_aoi
+ALTER TABLE ONLY euler.user_aoi
     ADD CONSTRAINT user_aoi_user_id_aoi_id_pkey PRIMARY KEY (user_id, aoi_id);
 
 
 --
 -- TOC entry 5386 (class 2606 OID 19596)
--- Name: user_layer user_layer_user_id_layer_id_pkey; Type: CONSTRAINT; Schema: uniba; Owner: uniba
+-- Name: user_layer user_layer_user_id_layer_id_pkey; Type: CONSTRAINT; Schema: euler; Owner: euler
 --
 
-ALTER TABLE ONLY uniba.user_layer
+ALTER TABLE ONLY euler.user_layer
     ADD CONSTRAINT user_layer_user_id_layer_id_pkey PRIMARY KEY (user_id, layer_id);
 
 
 --
 -- TOC entry 5380 (class 2606 OID 19598)
--- Name: user user_pkey; Type: CONSTRAINT; Schema: uniba; Owner: uniba
+-- Name: user user_pkey; Type: CONSTRAINT; Schema: euler; Owner: euler
 --
 
-ALTER TABLE ONLY uniba."user"
+ALTER TABLE ONLY euler."user"
     ADD CONSTRAINT user_pkey PRIMARY KEY (id);
 
 
 --
 -- TOC entry 5388 (class 2606 OID 19600)
--- Name: user_role user_role_user_id_role_id_pkey; Type: CONSTRAINT; Schema: uniba; Owner: uniba
+-- Name: user_role user_role_user_id_role_id_pkey; Type: CONSTRAINT; Schema: euler; Owner: euler
 --
 
-ALTER TABLE ONLY uniba.user_role
+ALTER TABLE ONLY euler.user_role
     ADD CONSTRAINT user_role_user_id_role_id_pkey PRIMARY KEY (user_id, role_id);
 
 
 --
 -- TOC entry 5390 (class 2606 OID 19602)
--- Name: user_style user_style_user_id_style_id_pkey; Type: CONSTRAINT; Schema: uniba; Owner: uniba
+-- Name: user_style user_style_user_id_style_id_pkey; Type: CONSTRAINT; Schema: euler; Owner: euler
 --
 
-ALTER TABLE ONLY uniba.user_style
+ALTER TABLE ONLY euler.user_style
     ADD CONSTRAINT user_style_user_id_style_id_pkey PRIMARY KEY (user_id, style_id);
 
 
 --
 -- TOC entry 5382 (class 2606 OID 19604)
--- Name: user user_username_key; Type: CONSTRAINT; Schema: uniba; Owner: uniba
+-- Name: user user_username_key; Type: CONSTRAINT; Schema: euler; Owner: euler
 --
 
-ALTER TABLE ONLY uniba."user"
+ALTER TABLE ONLY euler."user"
     ADD CONSTRAINT user_username_key UNIQUE (username);
 
 
 --
 -- TOC entry 5309 (class 1259 OID 19605)
--- Name: crop_geom_idx; Type: INDEX; Schema: uniba; Owner: uniba
+-- Name: crop_geom_idx; Type: INDEX; Schema: euler; Owner: euler
 --
 
-CREATE INDEX crop_geom_idx ON uniba.crop USING gist (geom);
+CREATE INDEX crop_geom_idx ON euler.crop USING gist (geom);
 
 
 --
 -- TOC entry 5324 (class 1259 OID 19606)
--- Name: deal_organization_id_idx; Type: INDEX; Schema: uniba; Owner: uniba
+-- Name: deal_organization_id_idx; Type: INDEX; Schema: euler; Owner: euler
 --
 
-CREATE INDEX deal_organization_id_idx ON uniba.deal USING btree (organization_id);
+CREATE INDEX deal_organization_id_idx ON euler.deal USING btree (organization_id);
 
 
 --
 -- TOC entry 5325 (class 1259 OID 19607)
--- Name: deal_sensor_id_idx; Type: INDEX; Schema: uniba; Owner: uniba
+-- Name: deal_sensor_id_idx; Type: INDEX; Schema: euler; Owner: euler
 --
 
-CREATE INDEX deal_sensor_id_idx ON uniba.deal USING btree (sensor_id);
+CREATE INDEX deal_sensor_id_idx ON euler.deal USING btree (sensor_id);
 
 
 --
 -- TOC entry 5326 (class 1259 OID 19608)
--- Name: ds_geom_idx; Type: INDEX; Schema: uniba; Owner: uniba
+-- Name: ds_geom_idx; Type: INDEX; Schema: euler; Owner: euler
 --
 
-CREATE INDEX ds_geom_idx ON uniba.ds USING gist (geom_4326) WITH (fillfactor='70');
+CREATE INDEX ds_geom_idx ON euler.ds USING gist (geom_4326) WITH (fillfactor='70');
 
 
 --
 -- TOC entry 5337 (class 1259 OID 19609)
--- Name: meteo_stations_measure_id_station_type_data_idx; Type: INDEX; Schema: uniba; Owner: uniba
+-- Name: meteo_stations_measure_id_station_type_data_idx; Type: INDEX; Schema: euler; Owner: euler
 --
 
-CREATE INDEX meteo_stations_measure_id_station_type_data_idx ON uniba.meteo_stations_measure USING btree (id_station, type, data) WITH (fillfactor='70');
+CREATE INDEX meteo_stations_measure_id_station_type_data_idx ON euler.meteo_stations_measure USING btree (id_station, type, data) WITH (fillfactor='70');
 
-ALTER TABLE uniba.meteo_stations_measure CLUSTER ON meteo_stations_measure_id_station_type_data_idx;
+ALTER TABLE euler.meteo_stations_measure CLUSTER ON meteo_stations_measure_id_station_type_data_idx;
 
 
 --
 -- TOC entry 5340 (class 1259 OID 19610)
--- Name: meteo_stations_measure_old_id_station_type_data_idx; Type: INDEX; Schema: uniba; Owner: uniba
+-- Name: meteo_stations_measure_old_id_station_type_data_idx; Type: INDEX; Schema: euler; Owner: euler
 --
 
-CREATE INDEX meteo_stations_measure_old_id_station_type_data_idx ON uniba.meteo_stations_measure_old USING btree (id_station, type, data) WITH (fillfactor='70');
+CREATE INDEX meteo_stations_measure_old_id_station_type_data_idx ON euler.meteo_stations_measure_old USING btree (id_station, type, data) WITH (fillfactor='70');
 
-ALTER TABLE uniba.meteo_stations_measure_old CLUSTER ON meteo_stations_measure_old_id_station_type_data_idx;
+ALTER TABLE euler.meteo_stations_measure_old CLUSTER ON meteo_stations_measure_old_id_station_type_data_idx;
 
 
 --
 -- TOC entry 5349 (class 1259 OID 19611)
--- Name: organization_alias_idx; Type: INDEX; Schema: uniba; Owner: uniba
+-- Name: organization_alias_idx; Type: INDEX; Schema: euler; Owner: euler
 --
 
-CREATE INDEX organization_alias_idx ON uniba.organization USING btree (alias);
+CREATE INDEX organization_alias_idx ON euler.organization USING btree (alias);
 
 
 --
 -- TOC entry 5352 (class 1259 OID 19612)
--- Name: ps_geom_idx; Type: INDEX; Schema: uniba; Owner: uniba
+-- Name: ps_geom_idx; Type: INDEX; Schema: euler; Owner: euler
 --
 
-CREATE INDEX ps_geom_idx ON uniba.ps USING gist (geom_4326) WITH (fillfactor='70');
+CREATE INDEX ps_geom_idx ON euler.ps USING gist (geom_4326) WITH (fillfactor='70');
 
 
 --
 -- TOC entry 5365 (class 1259 OID 19613)
--- Name: scatterer_code_idx; Type: INDEX; Schema: uniba; Owner: uniba
+-- Name: scatterer_code_idx; Type: INDEX; Schema: euler; Owner: euler
 --
 
-CREATE INDEX scatterer_code_idx ON uniba.scatterer USING btree (code) WITH (fillfactor='70');
+CREATE INDEX scatterer_code_idx ON euler.scatterer USING btree (code) WITH (fillfactor='70');
 
 
 --
 -- TOC entry 5366 (class 1259 OID 19614)
--- Name: scatterer_crop_id_idx; Type: INDEX; Schema: uniba; Owner: uniba
+-- Name: scatterer_crop_id_idx; Type: INDEX; Schema: euler; Owner: euler
 --
 
-CREATE INDEX scatterer_crop_id_idx ON uniba.scatterer USING btree (crop_id) INCLUDE (id) WITH (fillfactor='70');
+CREATE INDEX scatterer_crop_id_idx ON euler.scatterer USING btree (crop_id) INCLUDE (id) WITH (fillfactor='70');
 
 
 --
 -- TOC entry 5369 (class 1259 OID 19615)
--- Name: scatterer_dataset_id_idx; Type: INDEX; Schema: uniba; Owner: uniba
+-- Name: scatterer_dataset_id_idx; Type: INDEX; Schema: euler; Owner: euler
 --
 
-CREATE INDEX scatterer_dataset_id_idx ON uniba.scatterer USING btree (dataset_id) WITH (fillfactor='70');
+CREATE INDEX scatterer_dataset_id_idx ON euler.scatterer USING btree (dataset_id) WITH (fillfactor='70');
 
 
 --
 -- TOC entry 5378 (class 1259 OID 19616)
--- Name: user_organization_id_idx; Type: INDEX; Schema: uniba; Owner: uniba
+-- Name: user_organization_id_idx; Type: INDEX; Schema: euler; Owner: euler
 --
 
-CREATE INDEX user_organization_id_idx ON uniba."user" USING btree (organization_id);
+CREATE INDEX user_organization_id_idx ON euler."user" USING btree (organization_id);
 
 
 --
 -- TOC entry 5419 (class 2620 OID 19617)
--- Name: aoi aoi_tr_update_update_date; Type: TRIGGER; Schema: uniba; Owner: uniba
+-- Name: aoi aoi_tr_update_update_date; Type: TRIGGER; Schema: euler; Owner: euler
 --
 
-CREATE TRIGGER aoi_tr_update_update_date BEFORE INSERT OR UPDATE ON uniba.aoi FOR EACH ROW EXECUTE PROCEDURE uniba.update_update_date();
+CREATE TRIGGER aoi_tr_update_update_date BEFORE INSERT OR UPDATE ON euler.aoi FOR EACH ROW EXECUTE PROCEDURE euler.update_update_date();
 
 
 --
 -- TOC entry 5444 (class 2620 OID 19797)
--- Name: bookmark bookmark_tr_update_geom_from_geo_json; Type: TRIGGER; Schema: uniba; Owner: uniba
+-- Name: bookmark bookmark_tr_update_geom_from_geo_json; Type: TRIGGER; Schema: euler; Owner: euler
 --
 
-CREATE TRIGGER bookmark_tr_update_geom_from_geo_json BEFORE INSERT OR UPDATE ON uniba.bookmark FOR EACH ROW EXECUTE PROCEDURE uniba.update_geom_from_geo_json();
+CREATE TRIGGER bookmark_tr_update_geom_from_geo_json BEFORE INSERT OR UPDATE ON euler.bookmark FOR EACH ROW EXECUTE PROCEDURE euler.update_geom_from_geo_json();
 
 
 --
 -- TOC entry 5443 (class 2620 OID 19795)
--- Name: bookmark bookmark_tr_update_update_date; Type: TRIGGER; Schema: uniba; Owner: uniba
+-- Name: bookmark bookmark_tr_update_update_date; Type: TRIGGER; Schema: euler; Owner: euler
 --
 
-CREATE TRIGGER bookmark_tr_update_update_date AFTER INSERT OR UPDATE ON uniba.bookmark FOR EACH ROW EXECUTE PROCEDURE uniba.update_update_date();
+CREATE TRIGGER bookmark_tr_update_update_date AFTER INSERT OR UPDATE ON euler.bookmark FOR EACH ROW EXECUTE PROCEDURE euler.update_update_date();
 
 
 --
 -- TOC entry 5422 (class 2620 OID 19618)
--- Name: crop_parameter crop_parameter_tr_update_update_date; Type: TRIGGER; Schema: uniba; Owner: uniba
+-- Name: crop_parameter crop_parameter_tr_update_update_date; Type: TRIGGER; Schema: euler; Owner: euler
 --
 
-CREATE TRIGGER crop_parameter_tr_update_update_date BEFORE INSERT OR UPDATE ON uniba.crop_parameter FOR EACH ROW EXECUTE PROCEDURE uniba.update_update_date();
+CREATE TRIGGER crop_parameter_tr_update_update_date BEFORE INSERT OR UPDATE ON euler.crop_parameter FOR EACH ROW EXECUTE PROCEDURE euler.update_update_date();
 
 
 --
 -- TOC entry 5420 (class 2620 OID 19619)
--- Name: crop crop_tr_update_geom_geo_json_from_geom; Type: TRIGGER; Schema: uniba; Owner: uniba
+-- Name: crop crop_tr_update_geom_geo_json_from_geom; Type: TRIGGER; Schema: euler; Owner: euler
 --
 
-CREATE TRIGGER crop_tr_update_geom_geo_json_from_geom BEFORE INSERT OR UPDATE OF geom ON uniba.crop FOR EACH ROW EXECUTE PROCEDURE uniba.update_geo_json_from_geom();
+CREATE TRIGGER crop_tr_update_geom_geo_json_from_geom BEFORE INSERT OR UPDATE OF geom ON euler.crop FOR EACH ROW EXECUTE PROCEDURE euler.update_geo_json_from_geom();
 
 
 --
 -- TOC entry 5421 (class 2620 OID 19620)
--- Name: crop crop_tr_update_update_date; Type: TRIGGER; Schema: uniba; Owner: uniba
+-- Name: crop crop_tr_update_update_date; Type: TRIGGER; Schema: euler; Owner: euler
 --
 
-CREATE TRIGGER crop_tr_update_update_date BEFORE INSERT OR UPDATE ON uniba.crop FOR EACH ROW EXECUTE PROCEDURE uniba.update_update_date();
+CREATE TRIGGER crop_tr_update_update_date BEFORE INSERT OR UPDATE ON euler.crop FOR EACH ROW EXECUTE PROCEDURE euler.update_update_date();
 
 
 --
 -- TOC entry 5423 (class 2620 OID 19621)
--- Name: deal deal_tr_update_geom_from_geo_json; Type: TRIGGER; Schema: uniba; Owner: uniba
+-- Name: deal deal_tr_update_geom_from_geo_json; Type: TRIGGER; Schema: euler; Owner: euler
 --
 
-CREATE TRIGGER deal_tr_update_geom_from_geo_json BEFORE INSERT OR UPDATE ON uniba.deal FOR EACH ROW EXECUTE PROCEDURE uniba.update_geom_from_geo_json();
+CREATE TRIGGER deal_tr_update_geom_from_geo_json BEFORE INSERT OR UPDATE ON euler.deal FOR EACH ROW EXECUTE PROCEDURE euler.update_geom_from_geo_json();
 
 
 --
 -- TOC entry 5424 (class 2620 OID 19622)
--- Name: deal deal_tr_update_update_date; Type: TRIGGER; Schema: uniba; Owner: uniba
+-- Name: deal deal_tr_update_update_date; Type: TRIGGER; Schema: euler; Owner: euler
 --
 
-CREATE TRIGGER deal_tr_update_update_date BEFORE INSERT OR UPDATE ON uniba.deal FOR EACH ROW EXECUTE PROCEDURE uniba.update_update_date();
+CREATE TRIGGER deal_tr_update_update_date BEFORE INSERT OR UPDATE ON euler.deal FOR EACH ROW EXECUTE PROCEDURE euler.update_update_date();
 
 
 --
 -- TOC entry 5425 (class 2620 OID 19623)
--- Name: ds ds_tr_get_ds_geom_from_lat_lon; Type: TRIGGER; Schema: uniba; Owner: uniba
+-- Name: ds ds_tr_get_ds_geom_from_lat_lon; Type: TRIGGER; Schema: euler; Owner: euler
 --
 
-CREATE TRIGGER ds_tr_get_ds_geom_from_lat_lon BEFORE INSERT OR UPDATE OF lat, lon ON uniba.ds FOR EACH ROW EXECUTE PROCEDURE uniba.update_geom_from_lat_lon();
+CREATE TRIGGER ds_tr_get_ds_geom_from_lat_lon BEFORE INSERT OR UPDATE OF lat, lon ON euler.ds FOR EACH ROW EXECUTE PROCEDURE euler.update_geom_from_lat_lon();
 
 
 --
 -- TOC entry 5426 (class 2620 OID 19624)
--- Name: ds ds_tr_update_update_date; Type: TRIGGER; Schema: uniba; Owner: uniba
+-- Name: ds ds_tr_update_update_date; Type: TRIGGER; Schema: euler; Owner: euler
 --
 
-CREATE TRIGGER ds_tr_update_update_date BEFORE INSERT OR UPDATE ON uniba.ds FOR EACH ROW EXECUTE PROCEDURE uniba.update_update_date();
+CREATE TRIGGER ds_tr_update_update_date BEFORE INSERT OR UPDATE ON euler.ds FOR EACH ROW EXECUTE PROCEDURE euler.update_update_date();
 
 
 --
 -- TOC entry 5427 (class 2620 OID 19625)
--- Name: layer layer_tr_update_update_date; Type: TRIGGER; Schema: uniba; Owner: uniba
+-- Name: layer layer_tr_update_update_date; Type: TRIGGER; Schema: euler; Owner: euler
 --
 
-CREATE TRIGGER layer_tr_update_update_date BEFORE INSERT OR UPDATE ON uniba.layer FOR EACH ROW EXECUTE PROCEDURE uniba.update_update_date();
+CREATE TRIGGER layer_tr_update_update_date BEFORE INSERT OR UPDATE ON euler.layer FOR EACH ROW EXECUTE PROCEDURE euler.update_update_date();
 
 
 --
 -- TOC entry 5432 (class 2620 OID 19626)
--- Name: meteo_stations_measure_old meteo_stations_measurement_old_tr_update_update_date; Type: TRIGGER; Schema: uniba; Owner: uniba
+-- Name: meteo_stations_measure_old meteo_stations_measurement_old_tr_update_update_date; Type: TRIGGER; Schema: euler; Owner: euler
 --
 
-CREATE TRIGGER meteo_stations_measurement_old_tr_update_update_date BEFORE INSERT OR UPDATE ON uniba.meteo_stations_measure_old FOR EACH ROW EXECUTE PROCEDURE uniba.update_update_date();
+CREATE TRIGGER meteo_stations_measurement_old_tr_update_update_date BEFORE INSERT OR UPDATE ON euler.meteo_stations_measure_old FOR EACH ROW EXECUTE PROCEDURE euler.update_update_date();
 
 
 --
 -- TOC entry 5431 (class 2620 OID 19627)
--- Name: meteo_stations_measure meteo_stations_measurement_tr_update_update_date; Type: TRIGGER; Schema: uniba; Owner: uniba
+-- Name: meteo_stations_measure meteo_stations_measurement_tr_update_update_date; Type: TRIGGER; Schema: euler; Owner: euler
 --
 
-CREATE TRIGGER meteo_stations_measurement_tr_update_update_date BEFORE INSERT OR UPDATE ON uniba.meteo_stations_measure FOR EACH ROW EXECUTE PROCEDURE uniba.update_update_date();
+CREATE TRIGGER meteo_stations_measurement_tr_update_update_date BEFORE INSERT OR UPDATE ON euler.meteo_stations_measure FOR EACH ROW EXECUTE PROCEDURE euler.update_update_date();
 
 
 --
 -- TOC entry 5433 (class 2620 OID 19628)
--- Name: meteo_stations_old meteo_stations_tr_update_geo_json_from_geom; Type: TRIGGER; Schema: uniba; Owner: uniba
+-- Name: meteo_stations_old meteo_stations_tr_update_geo_json_from_geom; Type: TRIGGER; Schema: euler; Owner: euler
 --
 
-CREATE TRIGGER meteo_stations_tr_update_geo_json_from_geom BEFORE INSERT OR UPDATE ON uniba.meteo_stations_old FOR EACH ROW EXECUTE PROCEDURE uniba.update_geo_json_from_geom();
+CREATE TRIGGER meteo_stations_tr_update_geo_json_from_geom BEFORE INSERT OR UPDATE ON euler.meteo_stations_old FOR EACH ROW EXECUTE PROCEDURE euler.update_geo_json_from_geom();
 
 
 --
 -- TOC entry 5428 (class 2620 OID 19629)
--- Name: meteo_stations meteo_stations_tr_update_geo_json_from_geom; Type: TRIGGER; Schema: uniba; Owner: uniba
+-- Name: meteo_stations meteo_stations_tr_update_geo_json_from_geom; Type: TRIGGER; Schema: euler; Owner: euler
 --
 
-CREATE TRIGGER meteo_stations_tr_update_geo_json_from_geom BEFORE INSERT OR UPDATE ON uniba.meteo_stations FOR EACH ROW EXECUTE PROCEDURE uniba.update_geo_json_from_geom();
+CREATE TRIGGER meteo_stations_tr_update_geo_json_from_geom BEFORE INSERT OR UPDATE ON euler.meteo_stations FOR EACH ROW EXECUTE PROCEDURE euler.update_geo_json_from_geom();
 
 
 --
 -- TOC entry 5434 (class 2620 OID 19630)
--- Name: meteo_stations_old meteo_stations_tr_update_geom_from_lat_lon_elevation; Type: TRIGGER; Schema: uniba; Owner: uniba
+-- Name: meteo_stations_old meteo_stations_tr_update_geom_from_lat_lon_elevation; Type: TRIGGER; Schema: euler; Owner: euler
 --
 
-CREATE TRIGGER meteo_stations_tr_update_geom_from_lat_lon_elevation BEFORE INSERT OR UPDATE ON uniba.meteo_stations_old FOR EACH ROW EXECUTE PROCEDURE uniba.update_geom_from_lat_lon_elevation();
+CREATE TRIGGER meteo_stations_tr_update_geom_from_lat_lon_elevation BEFORE INSERT OR UPDATE ON euler.meteo_stations_old FOR EACH ROW EXECUTE PROCEDURE euler.update_geom_from_lat_lon_elevation();
 
 
 --
 -- TOC entry 5429 (class 2620 OID 19631)
--- Name: meteo_stations meteo_stations_tr_update_geom_from_lat_lon_elevation; Type: TRIGGER; Schema: uniba; Owner: uniba
+-- Name: meteo_stations meteo_stations_tr_update_geom_from_lat_lon_elevation; Type: TRIGGER; Schema: euler; Owner: euler
 --
 
-CREATE TRIGGER meteo_stations_tr_update_geom_from_lat_lon_elevation BEFORE INSERT OR UPDATE ON uniba.meteo_stations FOR EACH ROW EXECUTE PROCEDURE uniba.update_geom_from_lat_lon_elevation();
+CREATE TRIGGER meteo_stations_tr_update_geom_from_lat_lon_elevation BEFORE INSERT OR UPDATE ON euler.meteo_stations FOR EACH ROW EXECUTE PROCEDURE euler.update_geom_from_lat_lon_elevation();
 
 
 --
 -- TOC entry 5435 (class 2620 OID 19632)
--- Name: meteo_stations_old meteo_stations_tr_update_update_date; Type: TRIGGER; Schema: uniba; Owner: uniba
+-- Name: meteo_stations_old meteo_stations_tr_update_update_date; Type: TRIGGER; Schema: euler; Owner: euler
 --
 
-CREATE TRIGGER meteo_stations_tr_update_update_date BEFORE INSERT OR UPDATE ON uniba.meteo_stations_old FOR EACH ROW EXECUTE PROCEDURE uniba.update_update_date();
+CREATE TRIGGER meteo_stations_tr_update_update_date BEFORE INSERT OR UPDATE ON euler.meteo_stations_old FOR EACH ROW EXECUTE PROCEDURE euler.update_update_date();
 
 
 --
 -- TOC entry 5430 (class 2620 OID 19633)
--- Name: meteo_stations meteo_stations_tr_update_update_date; Type: TRIGGER; Schema: uniba; Owner: uniba
+-- Name: meteo_stations meteo_stations_tr_update_update_date; Type: TRIGGER; Schema: euler; Owner: euler
 --
 
-CREATE TRIGGER meteo_stations_tr_update_update_date BEFORE INSERT OR UPDATE ON uniba.meteo_stations FOR EACH ROW EXECUTE PROCEDURE uniba.update_update_date();
+CREATE TRIGGER meteo_stations_tr_update_update_date BEFORE INSERT OR UPDATE ON euler.meteo_stations FOR EACH ROW EXECUTE PROCEDURE euler.update_update_date();
 
 
 --
 -- TOC entry 5436 (class 2620 OID 19634)
--- Name: organization organization_tr_update_update_date; Type: TRIGGER; Schema: uniba; Owner: uniba
+-- Name: organization organization_tr_update_update_date; Type: TRIGGER; Schema: euler; Owner: euler
 --
 
-CREATE TRIGGER organization_tr_update_update_date BEFORE INSERT OR UPDATE ON uniba.organization FOR EACH ROW EXECUTE PROCEDURE uniba.update_update_date();
+CREATE TRIGGER organization_tr_update_update_date BEFORE INSERT OR UPDATE ON euler.organization FOR EACH ROW EXECUTE PROCEDURE euler.update_update_date();
 
 
 --
 -- TOC entry 5437 (class 2620 OID 19635)
--- Name: ps ps_tr_get_ps_geom_from_lat_lon; Type: TRIGGER; Schema: uniba; Owner: uniba
+-- Name: ps ps_tr_get_ps_geom_from_lat_lon; Type: TRIGGER; Schema: euler; Owner: euler
 --
 
-CREATE TRIGGER ps_tr_get_ps_geom_from_lat_lon BEFORE INSERT OR UPDATE OF lat, lon ON uniba.ps FOR EACH ROW EXECUTE PROCEDURE uniba.update_geom_from_lat_lon();
+CREATE TRIGGER ps_tr_get_ps_geom_from_lat_lon BEFORE INSERT OR UPDATE OF lat, lon ON euler.ps FOR EACH ROW EXECUTE PROCEDURE euler.update_geom_from_lat_lon();
 
 
 --
 -- TOC entry 5438 (class 2620 OID 19636)
--- Name: ps ps_tr_update_update_date; Type: TRIGGER; Schema: uniba; Owner: uniba
+-- Name: ps ps_tr_update_update_date; Type: TRIGGER; Schema: euler; Owner: euler
 --
 
-CREATE TRIGGER ps_tr_update_update_date BEFORE INSERT OR UPDATE ON uniba.ps FOR EACH ROW EXECUTE PROCEDURE uniba.update_update_date();
+CREATE TRIGGER ps_tr_update_update_date BEFORE INSERT OR UPDATE ON euler.ps FOR EACH ROW EXECUTE PROCEDURE euler.update_update_date();
 
 
 --
 -- TOC entry 5439 (class 2620 OID 19637)
--- Name: role role_tr_update_update_date; Type: TRIGGER; Schema: uniba; Owner: uniba
+-- Name: role role_tr_update_update_date; Type: TRIGGER; Schema: euler; Owner: euler
 --
 
-CREATE TRIGGER role_tr_update_update_date BEFORE INSERT OR UPDATE ON uniba.role FOR EACH ROW EXECUTE PROCEDURE uniba.update_update_date();
+CREATE TRIGGER role_tr_update_update_date BEFORE INSERT OR UPDATE ON euler.role FOR EACH ROW EXECUTE PROCEDURE euler.update_update_date();
 
 
 --
 -- TOC entry 5440 (class 2620 OID 19638)
--- Name: sensor sensor_tr_update_update_date; Type: TRIGGER; Schema: uniba; Owner: uniba
+-- Name: sensor sensor_tr_update_update_date; Type: TRIGGER; Schema: euler; Owner: euler
 --
 
-CREATE TRIGGER sensor_tr_update_update_date BEFORE INSERT OR UPDATE ON uniba.sensor FOR EACH ROW EXECUTE PROCEDURE uniba.update_update_date();
+CREATE TRIGGER sensor_tr_update_update_date BEFORE INSERT OR UPDATE ON euler.sensor FOR EACH ROW EXECUTE PROCEDURE euler.update_update_date();
 
 
 --
 -- TOC entry 5441 (class 2620 OID 19639)
--- Name: style style_tr_update_update_date; Type: TRIGGER; Schema: uniba; Owner: uniba
+-- Name: style style_tr_update_update_date; Type: TRIGGER; Schema: euler; Owner: euler
 --
 
-CREATE TRIGGER style_tr_update_update_date BEFORE INSERT OR UPDATE ON uniba.style FOR EACH ROW EXECUTE PROCEDURE uniba.update_update_date();
+CREATE TRIGGER style_tr_update_update_date BEFORE INSERT OR UPDATE ON euler.style FOR EACH ROW EXECUTE PROCEDURE euler.update_update_date();
 
 
 --
 -- TOC entry 5442 (class 2620 OID 19640)
--- Name: user user_tr_update_update_date; Type: TRIGGER; Schema: uniba; Owner: uniba
+-- Name: user user_tr_update_update_date; Type: TRIGGER; Schema: euler; Owner: euler
 --
 
-CREATE TRIGGER user_tr_update_update_date BEFORE INSERT OR UPDATE ON uniba."user" FOR EACH ROW EXECUTE PROCEDURE uniba.update_update_date();
+CREATE TRIGGER user_tr_update_update_date BEFORE INSERT OR UPDATE ON euler."user" FOR EACH ROW EXECUTE PROCEDURE euler.update_update_date();
 
 
 --
 -- TOC entry 5418 (class 2606 OID 19790)
--- Name: bookmark bookmark_user_id_fkey; Type: FK CONSTRAINT; Schema: uniba; Owner: uniba
+-- Name: bookmark bookmark_user_id_fkey; Type: FK CONSTRAINT; Schema: euler; Owner: euler
 --
 
-ALTER TABLE ONLY uniba.bookmark
-    ADD CONSTRAINT bookmark_user_id_fkey FOREIGN KEY (user_id) REFERENCES uniba."user"(id);
+ALTER TABLE ONLY euler.bookmark
+    ADD CONSTRAINT bookmark_user_id_fkey FOREIGN KEY (user_id) REFERENCES euler."user"(id);
 
 
 --
 -- TOC entry 5394 (class 2606 OID 19641)
--- Name: crop_blacklist crop_blacklist_crop_id_fkey; Type: FK CONSTRAINT; Schema: uniba; Owner: uniba
+-- Name: crop_blacklist crop_blacklist_crop_id_fkey; Type: FK CONSTRAINT; Schema: euler; Owner: euler
 --
 
-ALTER TABLE ONLY uniba.crop_blacklist
-    ADD CONSTRAINT crop_blacklist_crop_id_fkey FOREIGN KEY (crop_id) REFERENCES uniba.crop(id);
+ALTER TABLE ONLY euler.crop_blacklist
+    ADD CONSTRAINT crop_blacklist_crop_id_fkey FOREIGN KEY (crop_id) REFERENCES euler.crop(id);
 
 
 --
 -- TOC entry 5395 (class 2606 OID 19646)
--- Name: crop_blacklist crop_blacklist_organization_id_fkey; Type: FK CONSTRAINT; Schema: uniba; Owner: uniba
+-- Name: crop_blacklist crop_blacklist_organization_id_fkey; Type: FK CONSTRAINT; Schema: euler; Owner: euler
 --
 
-ALTER TABLE ONLY uniba.crop_blacklist
-    ADD CONSTRAINT crop_blacklist_organization_id_fkey FOREIGN KEY (organization_id) REFERENCES uniba.organization(id);
+ALTER TABLE ONLY euler.crop_blacklist
+    ADD CONSTRAINT crop_blacklist_organization_id_fkey FOREIGN KEY (organization_id) REFERENCES euler.organization(id);
 
 
 --
 -- TOC entry 5393 (class 2606 OID 19651)
--- Name: crop crop_dataset_id_fkey; Type: FK CONSTRAINT; Schema: uniba; Owner: uniba
+-- Name: crop crop_dataset_id_fkey; Type: FK CONSTRAINT; Schema: euler; Owner: euler
 --
 
-ALTER TABLE ONLY uniba.crop
-    ADD CONSTRAINT crop_dataset_id_fkey FOREIGN KEY (dataset_id) REFERENCES uniba.dataset(id);
+ALTER TABLE ONLY euler.crop
+    ADD CONSTRAINT crop_dataset_id_fkey FOREIGN KEY (dataset_id) REFERENCES euler.dataset(id);
 
 
 --
 -- TOC entry 5396 (class 2606 OID 19656)
--- Name: crop_parameter crop_parameter_crop_id_fkey; Type: FK CONSTRAINT; Schema: uniba; Owner: uniba
+-- Name: crop_parameter crop_parameter_crop_id_fkey; Type: FK CONSTRAINT; Schema: euler; Owner: euler
 --
 
-ALTER TABLE ONLY uniba.crop_parameter
-    ADD CONSTRAINT crop_parameter_crop_id_fkey FOREIGN KEY (crop_id) REFERENCES uniba.crop(id);
+ALTER TABLE ONLY euler.crop_parameter
+    ADD CONSTRAINT crop_parameter_crop_id_fkey FOREIGN KEY (crop_id) REFERENCES euler.crop(id);
 
 
 --
 -- TOC entry 5397 (class 2606 OID 19661)
--- Name: dataset dataset_sensor_id_fkey; Type: FK CONSTRAINT; Schema: uniba; Owner: uniba
+-- Name: dataset dataset_sensor_id_fkey; Type: FK CONSTRAINT; Schema: euler; Owner: euler
 --
 
-ALTER TABLE ONLY uniba.dataset
-    ADD CONSTRAINT dataset_sensor_id_fkey FOREIGN KEY (sensor_id) REFERENCES uniba.sensor(id);
+ALTER TABLE ONLY euler.dataset
+    ADD CONSTRAINT dataset_sensor_id_fkey FOREIGN KEY (sensor_id) REFERENCES euler.sensor(id);
 
 
 --
 -- TOC entry 5398 (class 2606 OID 19666)
--- Name: deal deal_organization_id_fkey; Type: FK CONSTRAINT; Schema: uniba; Owner: uniba
+-- Name: deal deal_organization_id_fkey; Type: FK CONSTRAINT; Schema: euler; Owner: euler
 --
 
-ALTER TABLE ONLY uniba.deal
-    ADD CONSTRAINT deal_organization_id_fkey FOREIGN KEY (organization_id) REFERENCES uniba.organization(id);
+ALTER TABLE ONLY euler.deal
+    ADD CONSTRAINT deal_organization_id_fkey FOREIGN KEY (organization_id) REFERENCES euler.organization(id);
 
 
 --
 -- TOC entry 5399 (class 2606 OID 19671)
--- Name: deal deal_sensor_id_fkey; Type: FK CONSTRAINT; Schema: uniba; Owner: uniba
+-- Name: deal deal_sensor_id_fkey; Type: FK CONSTRAINT; Schema: euler; Owner: euler
 --
 
-ALTER TABLE ONLY uniba.deal
-    ADD CONSTRAINT deal_sensor_id_fkey FOREIGN KEY (sensor_id) REFERENCES uniba.sensor(id);
+ALTER TABLE ONLY euler.deal
+    ADD CONSTRAINT deal_sensor_id_fkey FOREIGN KEY (sensor_id) REFERENCES euler.sensor(id);
 
 
 --
 -- TOC entry 5400 (class 2606 OID 19676)
--- Name: meteo_stations_measure meteo_stations_measure_id_station_fkey; Type: FK CONSTRAINT; Schema: uniba; Owner: uniba
+-- Name: meteo_stations_measure meteo_stations_measure_id_station_fkey; Type: FK CONSTRAINT; Schema: euler; Owner: euler
 --
 
-ALTER TABLE ONLY uniba.meteo_stations_measure
-    ADD CONSTRAINT meteo_stations_measure_id_station_fkey FOREIGN KEY (id_station) REFERENCES uniba.meteo_stations(id);
+ALTER TABLE ONLY euler.meteo_stations_measure
+    ADD CONSTRAINT meteo_stations_measure_id_station_fkey FOREIGN KEY (id_station) REFERENCES euler.meteo_stations(id);
 
 
 --
 -- TOC entry 5401 (class 2606 OID 19681)
--- Name: meteo_stations_measure_old meteo_stations_measure_old_id_station_fkey; Type: FK CONSTRAINT; Schema: uniba; Owner: uniba
+-- Name: meteo_stations_measure_old meteo_stations_measure_old_id_station_fkey; Type: FK CONSTRAINT; Schema: euler; Owner: euler
 --
 
-ALTER TABLE ONLY uniba.meteo_stations_measure_old
-    ADD CONSTRAINT meteo_stations_measure_old_id_station_fkey FOREIGN KEY (id_station) REFERENCES uniba.meteo_stations_old(id);
+ALTER TABLE ONLY euler.meteo_stations_measure_old
+    ADD CONSTRAINT meteo_stations_measure_old_id_station_fkey FOREIGN KEY (id_station) REFERENCES euler.meteo_stations_old(id);
 
 
 --
 -- TOC entry 5402 (class 2606 OID 19686)
--- Name: role_aoi role_aoi_aoi_id_fkey; Type: FK CONSTRAINT; Schema: uniba; Owner: uniba
+-- Name: role_aoi role_aoi_aoi_id_fkey; Type: FK CONSTRAINT; Schema: euler; Owner: euler
 --
 
-ALTER TABLE ONLY uniba.role_aoi
-    ADD CONSTRAINT role_aoi_aoi_id_fkey FOREIGN KEY (aoi_id) REFERENCES uniba.aoi(id);
+ALTER TABLE ONLY euler.role_aoi
+    ADD CONSTRAINT role_aoi_aoi_id_fkey FOREIGN KEY (aoi_id) REFERENCES euler.aoi(id);
 
 
 --
 -- TOC entry 5403 (class 2606 OID 19691)
--- Name: role_aoi role_aoi_role_id_fkey; Type: FK CONSTRAINT; Schema: uniba; Owner: uniba
+-- Name: role_aoi role_aoi_role_id_fkey; Type: FK CONSTRAINT; Schema: euler; Owner: euler
 --
 
-ALTER TABLE ONLY uniba.role_aoi
-    ADD CONSTRAINT role_aoi_role_id_fkey FOREIGN KEY (role_id) REFERENCES uniba.role(id);
+ALTER TABLE ONLY euler.role_aoi
+    ADD CONSTRAINT role_aoi_role_id_fkey FOREIGN KEY (role_id) REFERENCES euler.role(id);
 
 
 --
 -- TOC entry 5404 (class 2606 OID 19696)
--- Name: role_layer role_layer_layer_id_fkey; Type: FK CONSTRAINT; Schema: uniba; Owner: uniba
+-- Name: role_layer role_layer_layer_id_fkey; Type: FK CONSTRAINT; Schema: euler; Owner: euler
 --
 
-ALTER TABLE ONLY uniba.role_layer
-    ADD CONSTRAINT role_layer_layer_id_fkey FOREIGN KEY (layer_id) REFERENCES uniba.layer(id);
+ALTER TABLE ONLY euler.role_layer
+    ADD CONSTRAINT role_layer_layer_id_fkey FOREIGN KEY (layer_id) REFERENCES euler.layer(id);
 
 
 --
 -- TOC entry 5406 (class 2606 OID 19701)
--- Name: role_style role_layer_role_id_fkey; Type: FK CONSTRAINT; Schema: uniba; Owner: uniba
+-- Name: role_style role_layer_role_id_fkey; Type: FK CONSTRAINT; Schema: euler; Owner: euler
 --
 
-ALTER TABLE ONLY uniba.role_style
-    ADD CONSTRAINT role_layer_role_id_fkey FOREIGN KEY (role_id) REFERENCES uniba.role(id);
+ALTER TABLE ONLY euler.role_style
+    ADD CONSTRAINT role_layer_role_id_fkey FOREIGN KEY (role_id) REFERENCES euler.role(id);
 
 
 --
 -- TOC entry 5405 (class 2606 OID 19706)
--- Name: role_layer role_layer_role_id_fkey; Type: FK CONSTRAINT; Schema: uniba; Owner: uniba
+-- Name: role_layer role_layer_role_id_fkey; Type: FK CONSTRAINT; Schema: euler; Owner: euler
 --
 
-ALTER TABLE ONLY uniba.role_layer
-    ADD CONSTRAINT role_layer_role_id_fkey FOREIGN KEY (role_id) REFERENCES uniba.role(id);
+ALTER TABLE ONLY euler.role_layer
+    ADD CONSTRAINT role_layer_role_id_fkey FOREIGN KEY (role_id) REFERENCES euler.role(id);
 
 
 --
 -- TOC entry 5407 (class 2606 OID 19711)
--- Name: role_style role_layer_style_id_fkey; Type: FK CONSTRAINT; Schema: uniba; Owner: uniba
+-- Name: role_style role_layer_style_id_fkey; Type: FK CONSTRAINT; Schema: euler; Owner: euler
 --
 
-ALTER TABLE ONLY uniba.role_style
-    ADD CONSTRAINT role_layer_style_id_fkey FOREIGN KEY (style_id) REFERENCES uniba.style(id);
+ALTER TABLE ONLY euler.role_style
+    ADD CONSTRAINT role_layer_style_id_fkey FOREIGN KEY (style_id) REFERENCES euler.style(id);
 
 
 --
 -- TOC entry 5408 (class 2606 OID 19716)
--- Name: scatterer scatterer_crop_id_fkey; Type: FK CONSTRAINT; Schema: uniba; Owner: uniba
+-- Name: scatterer scatterer_crop_id_fkey; Type: FK CONSTRAINT; Schema: euler; Owner: euler
 --
 
-ALTER TABLE ONLY uniba.scatterer
-    ADD CONSTRAINT scatterer_crop_id_fkey FOREIGN KEY (crop_id) REFERENCES uniba.crop(id);
+ALTER TABLE ONLY euler.scatterer
+    ADD CONSTRAINT scatterer_crop_id_fkey FOREIGN KEY (crop_id) REFERENCES euler.crop(id);
 
 
 --
 -- TOC entry 5410 (class 2606 OID 19721)
--- Name: user_aoi user_aoi_aoi_id_fkey; Type: FK CONSTRAINT; Schema: uniba; Owner: uniba
+-- Name: user_aoi user_aoi_aoi_id_fkey; Type: FK CONSTRAINT; Schema: euler; Owner: euler
 --
 
-ALTER TABLE ONLY uniba.user_aoi
-    ADD CONSTRAINT user_aoi_aoi_id_fkey FOREIGN KEY (aoi_id) REFERENCES uniba.aoi(id);
+ALTER TABLE ONLY euler.user_aoi
+    ADD CONSTRAINT user_aoi_aoi_id_fkey FOREIGN KEY (aoi_id) REFERENCES euler.aoi(id);
 
 
 --
 -- TOC entry 5411 (class 2606 OID 19726)
--- Name: user_aoi user_aoi_user_id_fkey; Type: FK CONSTRAINT; Schema: uniba; Owner: uniba
+-- Name: user_aoi user_aoi_user_id_fkey; Type: FK CONSTRAINT; Schema: euler; Owner: euler
 --
 
-ALTER TABLE ONLY uniba.user_aoi
-    ADD CONSTRAINT user_aoi_user_id_fkey FOREIGN KEY (user_id) REFERENCES uniba."user"(id);
+ALTER TABLE ONLY euler.user_aoi
+    ADD CONSTRAINT user_aoi_user_id_fkey FOREIGN KEY (user_id) REFERENCES euler."user"(id);
 
 
 --
 -- TOC entry 5412 (class 2606 OID 19731)
--- Name: user_layer user_layer_layer_id_fkey; Type: FK CONSTRAINT; Schema: uniba; Owner: uniba
+-- Name: user_layer user_layer_layer_id_fkey; Type: FK CONSTRAINT; Schema: euler; Owner: euler
 --
 
-ALTER TABLE ONLY uniba.user_layer
-    ADD CONSTRAINT user_layer_layer_id_fkey FOREIGN KEY (layer_id) REFERENCES uniba.layer(id);
+ALTER TABLE ONLY euler.user_layer
+    ADD CONSTRAINT user_layer_layer_id_fkey FOREIGN KEY (layer_id) REFERENCES euler.layer(id);
 
 
 --
 -- TOC entry 5413 (class 2606 OID 19736)
--- Name: user_layer user_layer_user_id_fkey; Type: FK CONSTRAINT; Schema: uniba; Owner: uniba
+-- Name: user_layer user_layer_user_id_fkey; Type: FK CONSTRAINT; Schema: euler; Owner: euler
 --
 
-ALTER TABLE ONLY uniba.user_layer
-    ADD CONSTRAINT user_layer_user_id_fkey FOREIGN KEY (user_id) REFERENCES uniba."user"(id);
+ALTER TABLE ONLY euler.user_layer
+    ADD CONSTRAINT user_layer_user_id_fkey FOREIGN KEY (user_id) REFERENCES euler."user"(id);
 
 
 --
 -- TOC entry 5409 (class 2606 OID 19741)
--- Name: user user_organization_id_fkey; Type: FK CONSTRAINT; Schema: uniba; Owner: uniba
+-- Name: user user_organization_id_fkey; Type: FK CONSTRAINT; Schema: euler; Owner: euler
 --
 
-ALTER TABLE ONLY uniba."user"
-    ADD CONSTRAINT user_organization_id_fkey FOREIGN KEY (organization_id) REFERENCES uniba.organization(id);
+ALTER TABLE ONLY euler."user"
+    ADD CONSTRAINT user_organization_id_fkey FOREIGN KEY (organization_id) REFERENCES euler.organization(id);
 
 
 --
 -- TOC entry 5414 (class 2606 OID 19746)
--- Name: user_role user_role_role_id_fkey; Type: FK CONSTRAINT; Schema: uniba; Owner: uniba
+-- Name: user_role user_role_role_id_fkey; Type: FK CONSTRAINT; Schema: euler; Owner: euler
 --
 
-ALTER TABLE ONLY uniba.user_role
-    ADD CONSTRAINT user_role_role_id_fkey FOREIGN KEY (role_id) REFERENCES uniba.role(id);
+ALTER TABLE ONLY euler.user_role
+    ADD CONSTRAINT user_role_role_id_fkey FOREIGN KEY (role_id) REFERENCES euler.role(id);
 
 
 --
 -- TOC entry 5415 (class 2606 OID 19751)
--- Name: user_role user_role_user_id_fkey; Type: FK CONSTRAINT; Schema: uniba; Owner: uniba
+-- Name: user_role user_role_user_id_fkey; Type: FK CONSTRAINT; Schema: euler; Owner: euler
 --
 
-ALTER TABLE ONLY uniba.user_role
-    ADD CONSTRAINT user_role_user_id_fkey FOREIGN KEY (user_id) REFERENCES uniba."user"(id);
+ALTER TABLE ONLY euler.user_role
+    ADD CONSTRAINT user_role_user_id_fkey FOREIGN KEY (user_id) REFERENCES euler."user"(id);
 
 
 --
 -- TOC entry 5416 (class 2606 OID 19756)
--- Name: user_style user_style_style_id_fkey; Type: FK CONSTRAINT; Schema: uniba; Owner: uniba
+-- Name: user_style user_style_style_id_fkey; Type: FK CONSTRAINT; Schema: euler; Owner: euler
 --
 
-ALTER TABLE ONLY uniba.user_style
-    ADD CONSTRAINT user_style_style_id_fkey FOREIGN KEY (style_id) REFERENCES uniba.style(id);
+ALTER TABLE ONLY euler.user_style
+    ADD CONSTRAINT user_style_style_id_fkey FOREIGN KEY (style_id) REFERENCES euler.style(id);
 
 
 --
 -- TOC entry 5417 (class 2606 OID 19761)
--- Name: user_style user_style_user_id_fkey; Type: FK CONSTRAINT; Schema: uniba; Owner: uniba
+-- Name: user_style user_style_user_id_fkey; Type: FK CONSTRAINT; Schema: euler; Owner: euler
 --
 
-ALTER TABLE ONLY uniba.user_style
-    ADD CONSTRAINT user_style_user_id_fkey FOREIGN KEY (user_id) REFERENCES uniba."user"(id);
+ALTER TABLE ONLY euler.user_style
+    ADD CONSTRAINT user_style_user_id_fkey FOREIGN KEY (user_id) REFERENCES euler."user"(id);
 
 
 -- Completed on 2020-03-24 16:17:27 UTC
@@ -2583,11 +2583,11 @@ ALTER TABLE ONLY uniba.user_style
 -- PostgreSQL database dump complete
 --
 
--- FUNCTION: uniba.delete_ps_ds_cr_and_crop(integer)
+-- FUNCTION: euler.delete_ps_ds_cr_and_crop(integer)
 
--- DROP FUNCTION uniba.delete_ps_ds_cr_and_crop(integer);
+-- DROP FUNCTION euler.delete_ps_ds_cr_and_crop(integer);
 
-CREATE OR REPLACE FUNCTION uniba.delete_ps_ds_cr_and_crop(
+CREATE OR REPLACE FUNCTION euler.delete_ps_ds_cr_and_crop(
 	crop_id integer)
     RETURNS integer
     LANGUAGE 'plpgsql'
@@ -2664,18 +2664,18 @@ OPEN cur_features NO SCROLL FOR EXECUTE FORMAT('SELECT scatterer.id as scatterer
 	END;
 $BODY$;
 
-ALTER FUNCTION uniba.delete_ps_ds_cr_and_crop(integer) OWNER TO uniba;
+ALTER FUNCTION euler.delete_ps_ds_cr_and_crop(integer) OWNER TO euler;
 
-ALTER TABLE uniba.crop_parameter DROP CONSTRAINT crop_parameter_type_check;
+ALTER TABLE euler.crop_parameter DROP CONSTRAINT crop_parameter_type_check;
 
-ALTER TABLE uniba.crop_parameter
+ALTER TABLE euler.crop_parameter
     ADD CONSTRAINT crop_parameter_type_check CHECK (type = ANY (ARRAY['PS'::text, 'DS'::text, 'CR'::text]));
 
--- Table: uniba.corner_reflector
+-- Table: euler.corner_reflector
 
--- DROP TABLE uniba.corner_reflector;
+-- DROP TABLE euler.corner_reflector;
 
-CREATE TABLE uniba.corner_reflector
+CREATE TABLE euler.corner_reflector
 (
     id SERIAL,
     code text COLLATE pg_catalog."default" NOT NULL,
@@ -2699,25 +2699,25 @@ WITH (
 )
 TABLESPACE pg_default;
 
-ALTER TABLE uniba.corner_reflector
-    OWNER to uniba;
+ALTER TABLE euler.corner_reflector
+    OWNER to euler;
 
 -- Trigger: corner_reflector_tr_update_update_date
 
--- DROP TRIGGER corner_reflector_tr_update_update_date ON uniba.corner_reflector;
+-- DROP TRIGGER corner_reflector_tr_update_update_date ON euler.corner_reflector;
 
 CREATE TRIGGER corner_reflector_tr_update_update_date
     BEFORE INSERT OR UPDATE
-    ON uniba.corner_reflector
+    ON euler.corner_reflector
     FOR EACH ROW
-    EXECUTE PROCEDURE uniba.update_update_date();
+    EXECUTE PROCEDURE euler.update_update_date();
 
 
--- Table: uniba.corner_reflector_version
+-- Table: euler.corner_reflector_version
 
--- DROP TABLE uniba.corner_reflector_version;
+-- DROP TABLE euler.corner_reflector_version;
 
-CREATE TABLE uniba.corner_reflector_version
+CREATE TABLE euler.corner_reflector_version
 (
     id SERIAL,
     date timestamp without time zone NOT NULL,
@@ -2737,7 +2737,7 @@ CREATE TABLE uniba.corner_reflector_version
         WITH (FILLFACTOR=70),
     CONSTRAINT corner_reflector_version_date_corner_reflector_id_key UNIQUE (date, corner_reflector_id),
     CONSTRAINT corner_reflector_version_corner_reflector_id_fkey FOREIGN KEY (corner_reflector_id)
-        REFERENCES uniba.corner_reflector (id) MATCH SIMPLE
+        REFERENCES euler.corner_reflector (id) MATCH SIMPLE
         ON UPDATE NO ACTION
         ON DELETE NO ACTION
         NOT VALID
@@ -2752,36 +2752,36 @@ WITH (
 )
 TABLESPACE pg_default;
 
-ALTER TABLE uniba.corner_reflector_version
-    OWNER to uniba;
+ALTER TABLE euler.corner_reflector_version
+    OWNER to euler;
 
 -- Trigger: corner_reflector_version_tr_update_update_date
 
--- DROP TRIGGER corner_reflector_version_tr_update_update_date ON uniba.corner_reflector_version;
+-- DROP TRIGGER corner_reflector_version_tr_update_update_date ON euler.corner_reflector_version;
 
 CREATE TRIGGER corner_reflector_version_tr_update_update_date
     BEFORE INSERT OR UPDATE
-    ON uniba.corner_reflector_version
+    ON euler.corner_reflector_version
     FOR EACH ROW
-    EXECUTE PROCEDURE uniba.update_update_date();
+    EXECUTE PROCEDURE euler.update_update_date();
 
 
 -- Trigger: ps_tr_get_ps_geom_from_lat_lon
 
--- DROP TRIGGER ps_tr_get_ps_geom_from_lat_lon ON uniba.corner_reflector_version;
+-- DROP TRIGGER ps_tr_get_ps_geom_from_lat_lon ON euler.corner_reflector_version;
 
 CREATE TRIGGER corner_reflector_version_tr_get_cr_geom_from_lat_lon
     BEFORE INSERT OR UPDATE OF lat, lon
-    ON uniba.corner_reflector_version
+    ON euler.corner_reflector_version
     FOR EACH ROW
-    EXECUTE PROCEDURE uniba.update_geom_from_lat_lon();
+    EXECUTE PROCEDURE euler.update_geom_from_lat_lon();
 
 
--- Table: uniba.cr_scatterer
+-- Table: euler.cr_scatterer
 
--- DROP TABLE uniba.cr_scatterer;
+-- DROP TABLE euler.cr_scatterer;
 
-CREATE TABLE uniba.cr_scatterer
+CREATE TABLE euler.cr_scatterer
 (
     create_date timestamp without time zone DEFAULT now(),
     update_date timestamp without time zone DEFAULT now(),
@@ -2798,7 +2798,7 @@ CREATE TABLE uniba.cr_scatterer
     CONSTRAINT cr_scatterer_pkey PRIMARY KEY (scatterer_id)
         WITH (FILLFACTOR=70),
     CONSTRAINT cr_scatterer_corner_reflector_id_fkey FOREIGN KEY (corner_reflector_id)
-        REFERENCES uniba.corner_reflector (id) MATCH SIMPLE
+        REFERENCES euler.corner_reflector (id) MATCH SIMPLE
         ON UPDATE NO ACTION
         ON DELETE NO ACTION
         NOT VALID
@@ -2813,44 +2813,44 @@ WITH (
 )
 TABLESPACE pg_default;
 
-ALTER TABLE uniba.cr_scatterer
-    OWNER to uniba;
+ALTER TABLE euler.cr_scatterer
+    OWNER to euler;
 -- Index: cr_scatterer_geom_idx
 
--- DROP INDEX uniba.cr_scatterer_geom_idx;
+-- DROP INDEX euler.cr_scatterer_geom_idx;
 
 CREATE INDEX cr_scatterer_geom_idx
-    ON uniba.cr_scatterer USING gist
+    ON euler.cr_scatterer USING gist
     (geom_4326)
     WITH (FILLFACTOR=70)
     TABLESPACE pg_default;
 
 -- Trigger: cr_scatterer_tr_get_cr_scatterer_geom_from_lat_lon
 
--- DROP TRIGGER cr_scatterer_tr_get_cr_scatterer_geom_from_lat_lon ON uniba.cr_scatterer;
+-- DROP TRIGGER cr_scatterer_tr_get_cr_scatterer_geom_from_lat_lon ON euler.cr_scatterer;
 
 CREATE TRIGGER cr_scatterer_tr_get_cr_scatterer_geom_from_lat_lon
     BEFORE INSERT OR UPDATE OF lat, lon
-    ON uniba.cr_scatterer
+    ON euler.cr_scatterer
     FOR EACH ROW
-    EXECUTE PROCEDURE uniba.update_geom_from_lat_lon();
+    EXECUTE PROCEDURE euler.update_geom_from_lat_lon();
 
 -- Trigger: cr_scatterer_tr_update_update_date
 
--- DROP TRIGGER cr_scatterer_tr_update_update_date ON uniba.cr_scatterer;
+-- DROP TRIGGER cr_scatterer_tr_update_update_date ON euler.cr_scatterer;
 
 CREATE TRIGGER cr_scatterer_tr_update_update_date
     BEFORE INSERT OR UPDATE
-    ON uniba.cr_scatterer
+    ON euler.cr_scatterer
     FOR EACH ROW
-    EXECUTE PROCEDURE uniba.update_update_date();
+    EXECUTE PROCEDURE euler.update_update_date();
 
 
--- Table: uniba.cr_scatterer_measurement
+-- Table: euler.cr_scatterer_measurement
 
--- DROP TABLE uniba.cr_scatterer_measurement;
+-- DROP TABLE euler.cr_scatterer_measurement;
 
-CREATE TABLE uniba.cr_scatterer_measurement
+CREATE TABLE euler.cr_scatterer_measurement
 (
     measurement text COLLATE pg_catalog."default",
     scatterer_id integer NOT NULL,
@@ -2866,15 +2866,15 @@ WITH (
     autovacuum_vacuum_threshold = 1000000
 );
 
-ALTER TABLE uniba.cr_scatterer_measurement
-    OWNER to uniba;
+ALTER TABLE euler.cr_scatterer_measurement
+    OWNER to euler;
 
 
--- Table: uniba.bookmark_scatterer
+-- Table: euler.bookmark_scatterer
 
--- DROP TABLE uniba.bookmark_scatterer;
+-- DROP TABLE euler.bookmark_scatterer;
 
-CREATE TABLE uniba.bookmark_scatterer
+CREATE TABLE euler.bookmark_scatterer
 (
     id serial,
     name text COLLATE pg_catalog."default",
@@ -2884,11 +2884,11 @@ CREATE TABLE uniba.bookmark_scatterer
     update_date timestamp without time zone,
     CONSTRAINT bookmark_scatterer_pkey PRIMARY KEY (id),
     CONSTRAINT bookmark_scatterer_scatterer_id_fkey FOREIGN KEY (scatterer_id)
-        REFERENCES uniba.scatterer (id) MATCH SIMPLE
+        REFERENCES euler.scatterer (id) MATCH SIMPLE
         ON UPDATE NO ACTION
         ON DELETE NO ACTION,
     CONSTRAINT bookmark_scatterer_user_id_2_fkey FOREIGN KEY (user_id)
-        REFERENCES uniba."user" (id) MATCH SIMPLE
+        REFERENCES euler."user" (id) MATCH SIMPLE
         ON UPDATE NO ACTION
         ON DELETE NO ACTION
 )
@@ -2897,5 +2897,5 @@ WITH (
 )
 TABLESPACE pg_default;
 
-ALTER TABLE uniba.bookmark_scatterer
-    OWNER to uniba;
+ALTER TABLE euler.bookmark_scatterer
+    OWNER to euler;

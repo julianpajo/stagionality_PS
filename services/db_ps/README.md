@@ -42,7 +42,7 @@ To create folders:
 
 ### Run container
 
-docker run --rm -it --name rheticus_db -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=admin -e POSTGRES_DB=UNIBA -e PROJECT_USER=uniba -e PROJECT_PASSWORD=admin -v ./pg_data/db_hdd1:/var/lib/postgresql/hdd1 -v ./pg_data/db_ssd1:/var/lib/postgresql/data -p 5435:5432 stagionality_ps-db:develop
+docker run --rm -it --name euler_db -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=admin -e POSTGRES_DB=EULER -e PROJECT_USER=euler -e PROJECT_PASSWORD=admin -v ./pg_data/db_hdd1:/var/lib/postgresql/hdd1 -v ./pg_data/db_ssd1:/var/lib/postgresql/data -p 5435:5432 stagionality_ps-db:develop
 
 
 ### Troubleshooting
