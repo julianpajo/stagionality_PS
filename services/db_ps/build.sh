@@ -1,7 +1,7 @@
 #!/bin/bash
 
-# Init constants
-REPO_PREFIX="stagionality_ps"
+BASE_IMAGE_LOCATION=dockerhub.euler.it
+PROJECT_NAME=stagionality_ps
 REPO_NAME="db"
 
 # Function to display usage information
@@ -10,7 +10,6 @@ usage() {
     echo "Description: Script to build docker images of this project."
     echo "Options:"
     echo "  -t <docker image tag>   Specify the docker image tag"
-    exit 1
 }
 
 # Parse command line options
@@ -28,7 +27,7 @@ if [ -z "$docker_image_tag" ]; then
 fi
 
 # Construct image name
-image_name="${REPO_PREFIX}-${REPO_NAME}:${docker_image_tag}"
+image_name="${BASE_IMAGE_LOCATION}/${PROJECT_NAME}-${REPO_NAME}:${docker_image_tag}"
 
 # Build Docker image
 docker build -t "$image_name" .

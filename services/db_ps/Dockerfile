@@ -1,4 +1,4 @@
-FROM stagionality_ps-docker_postgis:develop
+FROM dockerhub.euler.it/stagionality_ps-docker_postgis:develop
 
 WORKDIR /usr/local/db_ps/
 COPY ./src/ ./src/

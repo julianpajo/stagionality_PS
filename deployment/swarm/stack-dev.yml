@@ -12,14 +12,14 @@ services:
     # GUI Section
 
     #gui-ps:
-    #  image: ${BASE_IMAGE_LOCATION}-gui:${BACKEND_VERSION}
+    #  image: ${BASE_IMAGE_LOCATION}/${PROJECT_NAME}-gui:${BACKEND_VERSION}
     #  networks:
     #    - traefik-public
     #    - euler-dev
 
 
     #gui-apigw:
-    #    image: ${BASE_IMAGE_LOCATION}-gui_apigw:${BACKEND_VERSION}
+    #    image: ${BASE_IMAGE_LOCATION}/${PROJECT_NAME}-gui_apigw:${BACKEND_VERSION}
     #    volumes:
     #    - ${NFS_SHARED_DOCKERDATA}/gui/apigw/logs/:/logs/:rw
     #    networks:
@@ -38,7 +38,7 @@ services:
     # Database Section
 
     db-ps:
-        image: ${BASE_IMAGE_LOCATION}-db:${BACKEND_VERSION}
+        image: ${BASE_IMAGE_LOCATION}/${PROJECT_NAME}-db:${BACKEND_VERSION}
         ports:
             - 5432:5432
         environment:
@@ -63,7 +63,7 @@ services:
 
 
     #pgbackup:
-    #    image: ${BASE_IMAGE_LOCATION}_postgres_backup:${BACKEND_VERSION}
+    #    image: ${BASE_IMAGE_LOCATION}/${PROJECT_NAME}-pg_backup:${BACKEND_VERSION}
     #    volumes:
     #        - ${NFS_SHARED_BACKUP}/db_ps/:/backups
     #    environment:
