@@ -1,0 +1,7 @@
+tls:
+  certificates:
+    - certFile: /etc/certs/euler.test.crt
+      keyFile: /etc/certs/euler.test.key
+
+
+
