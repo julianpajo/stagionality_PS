@@ -2,9 +2,6 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 11.1 (Debian 11.1-1.pgdg90+1)
--- Dumped by pg_dump version 11.4 (Ubuntu 11.4-1.pgdg16.04+1)
-
 -- Started on 2020-03-24 16:17:23 UTC
 
 SET statement_timeout = 0;
@@ -21,32 +18,6 @@ ALTER DATABASE "UNIBA" OWNER TO uniba;
 ALTER DATABASE "UNIBA" SET search_path=public,pg_catalog,postgis,topology,tiger,pgcrypto,dblink,uniba;
 
 \connect "UNIBA"
-
--- Tablespace: hdd1
--- DROP TABLESPACE hdd1;
-
-CREATE TABLESPACE hdd1
-  OWNER uniba
-  LOCATION '/var/lib/postgresql/hdd1';
-
-ALTER TABLESPACE hdd1
-  OWNER TO uniba;
-
-ALTER TABLESPACE hdd1
-    SET (seq_page_cost=1, random_page_cost=4, effective_io_concurrency=1);
-
-
--- Tablespace: ssd1
--- DROP TABLESPACE ssd1;
-
-CREATE TABLESPACE ssd1
-  OWNER uniba
-  LOCATION '/var/lib/postgresql/ssd1';
-
-
-ALTER TABLESPACE ssd1
-  OWNER TO uniba;
-
 
 
 CREATE SCHEMA uniba;
@@ -640,8 +611,6 @@ CREATE FUNCTION uniba.update_update_date() RETURNS trigger
 
 ALTER FUNCTION uniba.update_update_date() OWNER TO uniba;
 
-SET default_tablespace = '';
-
 SET default_with_oids = false;
 
 --
@@ -958,8 +927,6 @@ WITH (fillfactor='70', autovacuum_vacuum_threshold='1000000', autovacuum_vacuum_
 
 ALTER TABLE uniba.ds OWNER TO uniba;
 
-SET default_tablespace = 'hdd1';
-
 --
 -- TOC entry 292 (class 1259 OID 19342)
 -- Name: ds_measurement; Type: TABLE; Schema: uniba; Owner: uniba; Tablespace: hdd1
@@ -973,9 +940,6 @@ WITH (fillfactor='70', autovacuum_vacuum_threshold='1000000', autovacuum_vacuum_
 
 
 ALTER TABLE uniba.ds_measurement OWNER TO uniba;
-
-
-SET default_tablespace = '';
 
 --
 -- TOC entry 293 (class 1259 OID 19348)
@@ -1303,8 +1267,6 @@ WITH (fillfactor='70', autovacuum_vacuum_scale_factor='0', autovacuum_vacuum_thr
 
 ALTER TABLE uniba.ps OWNER TO uniba;
 
-SET default_tablespace = 'hdd1';
-
 --
 -- TOC entry 310 (class 1259 OID 19446)
 -- Name: ps_measurement; Type: TABLE; Schema: uniba; Owner: uniba; Tablespace: hdd1
@@ -1318,8 +1280,6 @@ WITH (fillfactor='70', autovacuum_vacuum_scale_factor='0', autovacuum_vacuum_thr
 
 
 ALTER TABLE uniba.ps_measurement OWNER TO uniba;
-
-SET default_tablespace = '';
 
 --
 -- TOC entry 311 (class 1259 OID 19452)
@@ -1826,8 +1786,6 @@ ALTER TABLE ONLY uniba.dataset
 ALTER TABLE ONLY uniba.deal
     ADD CONSTRAINT deal_id_pkey PRIMARY KEY (id);
 
-SET default_tablespace = 'hdd1';
-
 --
 -- TOC entry 5330 (class 2606 OID 19550)
 -- Name: ds_measurement ds_measurement_pkey; Type: CONSTRAINT; Schema: uniba; Owner: uniba; Tablespace: hdd1
@@ -1835,8 +1793,6 @@ SET default_tablespace = 'hdd1';
 
 ALTER TABLE ONLY uniba.ds_measurement
     ADD CONSTRAINT ds_measurement_pkey PRIMARY KEY (scatterer_id) WITH (fillfactor='70');
-
-SET default_tablespace = '';
 
 --
 -- TOC entry 5328 (class 2606 OID 19552)
@@ -1927,8 +1883,6 @@ ALTER TABLE ONLY uniba.oauth_client_token
 ALTER TABLE ONLY uniba.organization
     ADD CONSTRAINT organization_id_pkey PRIMARY KEY (id);
 
-SET default_tablespace = 'hdd1';
-
 --
 -- TOC entry 5356 (class 2606 OID 19572)
 -- Name: ps_measurement ps_measurement_pkey; Type: CONSTRAINT; Schema: uniba; Owner: uniba; Tablespace: hdd1
@@ -1936,8 +1890,6 @@ SET default_tablespace = 'hdd1';
 
 ALTER TABLE ONLY uniba.ps_measurement
     ADD CONSTRAINT ps_measurement_pkey PRIMARY KEY (scatterer_id) WITH (fillfactor='70');
-
-SET default_tablespace = '';
 
 --
 -- TOC entry 5354 (class 2606 OID 19574)
