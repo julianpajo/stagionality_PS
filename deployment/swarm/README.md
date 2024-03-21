@@ -20,6 +20,7 @@ You can create it with this command:
 
 ```bash
 docker network create -d overlay euler-dev
+docker network create -d overlay traefik-public
 ```
 
 #### Docker secrets
@@ -48,7 +49,23 @@ Create the necessary volumes by executing this command:
 
 ```bash
 sudo mkdir -p /data/development/docker_data/postgres/db
+sudo mkdir -p /data/development/docker_data/traefik
+sudo mkdir -p /data/development/docker_data/traefik/userfiles
+sudo touch /data/development/docker_data/traefik/traefik.log
+sudo touch /data/development/docker_data/traefik/access.log
 ```
+
+### Update /etc/hosts file with local development domains
+
+Open the **/etc/hosts** file with 
+
+```bash
+sudo nano /etc/hosts
+```
+
+and add the following domains in the /etc/hosts file:
+
+- 172.18.0.1   euler.local 
 
 ### Deploy stack yaml
 

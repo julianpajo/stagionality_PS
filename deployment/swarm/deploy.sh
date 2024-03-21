@@ -20,4 +20,6 @@ fi
 sed -i 's/published: "\([0-9]*\)"/published: \1/g' "$file"
 
 
+sudo systemctl stop apache2
+docker stack deploy -c traefik.yml traefik
 docker stack deploy -c euler.yml euler
