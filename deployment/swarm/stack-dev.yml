@@ -1,0 +1,95 @@
+version: "3.5"
+
+services:
+
+    # _____ _   _ _____ 
+    #|  __ \ | | |_   _|
+    #| |  \/ | | | | |  
+    #| | __| | | | | |  
+    #| |_\ \ |_| |_| |_ 
+    # \____/\___/ \___/ 
+
+    # GUI Section
+
+    #gui-ps:
+    #  image: ${BASE_IMAGE_LOCATION}-gui:${BACKEND_VERSION}
+    #  networks:
+    #    - traefik-public
+    #    - uniba-dev
+
+
+    #gui-apigw:
+    #    image: ${BASE_IMAGE_LOCATION}-gui_apigw:${BACKEND_VERSION}
+    #    volumes:
+    #    - ${NFS_SHARED_DOCKERDATA}/gui/apigw/logs/:/logs/:rw
+    #    networks:
+    #    - traefik-public
+    #    - uniba-dev
+    #    environment:
+
+
+    #____________ 
+    #|  _  \ ___ \
+    #| | | | |_/ /
+    #| | | | ___ \
+    #| |/ /| |_/ /
+    #|___/ \____/ 
+
+    # Database Section
+
+    db-ps:
+        image: ${BASE_IMAGE_LOCATION}-db:${BACKEND_VERSION}
+        ports:
+            - 5432:5432
+        environment:
+            PGDATA: /var/lib/postgresql/data/pgdata
+            POSTGRES_SERVER: uniba
+            POSTGRES_DB: uniba
+            POSTGRES_USER: uniba
+            POSTGRES_PASSWORD_FILE: /run/secrets/postgres_passwd
+            DB_HOSTNAME: cots-db
+            DB_PORT: 5432
+            DB_DATABASE: uniba
+            DB_USERNAME: uniba
+            DB_PASSWORD_FILE: /run/secrets/postgres_passwd
+        volumes:
+            - ${NFS_SHARED_DOCKERDATA}/postgres/db:/var/lib/postgresql/data:rw
+        secrets:
+            - postgres_passwd
+        networks:
+            - uniba-dev
+        healthcheck:
+            test: ["CMD", "nc", "-z", "localhost", "5432"]
+            start_period: 1000s
+            interval: 10s
+            timeout: 10s
+
+    #pgbackup:
+    #    image: ${BASE_IMAGE_LOCATION}_postgres_backup:${BACKEND_VERSION}
+    #    volumes:
+    #        - ${NFS_SHARED_BACKUP}/db_ps/:/backups
+    #    environment:
+    #        POSTGRES_HOST: db-ps
+    #        POSTGRES_DBS: uniba
+    #        POSTGRES_USER: uniba
+    #        POSTGRES_PORT: 5432
+    #        POSTGRES_EXTRA_OPTS: -Z6
+    #        BACKUP_DIR: /backups
+    #        BACKUP_SUFFIX: .sql
+    #        BACKUP_KEEP_DAYS: 7
+    #        BACKUP_KEEP_WEEKS: 4
+    #        BACKUP_KEEP_MONTHS: 6
+    #        BACKUP_KEEP_MINS: 1440
+    #        POSTGRES_PASSWORD_FILE: /run/secrets/postgres_passwd
+    #    networks:
+    #        uniba-dev: {}
+    #    secrets:
+    #        - source: postgres_passwd
+
+networks:
+    uniba-dev:
+        external: true
+secrets:
+    postgres_passwd:
+       external: true
+       name: postgres_passwd
