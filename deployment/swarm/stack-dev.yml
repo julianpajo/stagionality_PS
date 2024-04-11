@@ -11,11 +11,19 @@ services:
 
     # GUI Section
 
-    #gui-ps:
-    #  image: ${BASE_IMAGE_LOCATION}/${PROJECT_NAME}-gui:${BACKEND_VERSION}
-    #  networks:
-    #    - traefik-public
-    #    - euler-dev
+    gui:
+        deploy:
+            labels:
+                traefik.enable: "true"
+                traefik.http.routers.gui-http.entrypoints: https
+                traefik.http.routers.gui-http.rule: Host(`displacement.euler.local`)
+                traefik.http.routers.gui-http.tls: "true"
+                traefik.http.routers.gui-http.tls.certresolver: guiresolver
+                traefik.http.services.gui.loadbalancer.server.port: "80"
+        image: nginx:latest
+        networks:
+            - traefik-public
+            - euler-dev
 
 
     #gui-apigw:
@@ -86,6 +94,8 @@ services:
 
 networks:
     euler-dev:
+        external: true
+    traefik-public:
         external: true
 secrets:
     postgres_passwd:

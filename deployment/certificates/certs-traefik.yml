@@ -4,3 +4,9 @@ tls:
       keyFile: /etc/certs/euler.test.key
     - certFile: /etc/certs/displacement.test.crt
       keyFile: /etc/certs/displacement.test.key
+    - certFile: /etc/certs/auth.test.crt
+      keyFile: /etc/certs/auth.test.key
+    - certFile: /etc/certs/keycloak.test.crt
+      keyFile: /etc/certs/keycloak.test.key
+    - certFile: /etc/certs/test.test.crt
+      keyFile: /etc/certs/test.test.key
