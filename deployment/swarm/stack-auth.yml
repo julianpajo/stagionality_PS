@@ -1,0 +1,102 @@
+version: "3.7"
+
+services:
+
+  oauth2-proxy:
+    deploy:
+      labels:
+        traefik.backend: gui
+        traefik.enable: "true"
+        traefik.http.routers.gui.entryPoints: https
+        traefik.http.routers.gui.rule: Host(`test.${DEPLOY_DOMAIN}`)
+        traefik.http.routers.gui.tls: "true"
+        traefik.http.services.gui.loadbalancer.server.port: '4180'
+    image: bitnami/oauth2-proxy:7.3.0
+    command:
+      - --http-address
+      - 0.0.0.0:4180
+    environment:
+      OAUTH2_PROXY_UPSTREAMS: http://nginx1/
+      OAUTH2_PROXY_PROVIDER_DISPLAY_NAME: Keycloak
+      OAUTH2_PROXY_PROVIDER: keycloak-oidc 
+      OAUTH2_PROXY_OIDC_ISSUER_URL: https://keycloak.${DEPLOY_DOMAIN}/auth/realms/Euler
+      OAUTH2_PROXY_CLIENT_ID: euler
+      OAUTH2_PROXY_CLIENT_SECRET: xzwfZ9vzJBFntl0jiESPJGvRBj6UPpxT
+      OAUTH2_PROXY_PASS_ACCESS_TOKEN: "true"
+      OAUTH2_PROXY_SKIP_PROVIDER_BUTTON: "true"      
+      OAUTH2_PROXY_EMAIL_DOMAINS: '*' 
+      OAUTH2_PROXY_REDIRECT_URL: https://test.${DEPLOY_DOMAIN}/oauth2/callback 
+      OAUTH2_PROXY_COOKIE_SECRET: cYW8ox+3ySQZ5M+92hsZhnUqiQqM5U7B
+      OAUTH2_PROXY_SKIP_OIDC_DISCOVERY: "true"
+      OAUTH2_PROXY_COOKIE_SECURE: "false"
+      OAUTH2_PROXY_LOGIN_URL: https://keycloak.${DEPLOY_DOMAIN}/auth/realms/Euler/protocol/openid-connect/auth
+      OAUTH2_PROXY_REDEEM_URL: https://keycloak.${DEPLOY_DOMAIN}/auth/realms/Euler/protocol/openid-connect/token
+      OAUTH2_PROXY_OIDC_JWKS_URL: https://keycloak.${DEPLOY_DOMAIN}/auth/realms/Euler/protocol/openid-connect/certs
+      OAUTH2_PROXY_COOKIE_CSRF_PER_REQUEST: "true"
+    ports:
+      - 4180:4180 
+    depends_on:
+      - keycloak
+    networks:
+      - traefik-public
+    volumes:
+      - ../certificates/keycloak.test.crt:/etc/ssl/certs/ca-certificates.crt
+    
+      
+  keycloak:
+    deploy:
+        labels:
+          traefik.enable: "true"
+          traefik.http.routers.keycloak-https-admin.entrypoints: https
+          traefik.http.routers.keycloak-https-admin.rule: Host(`keycloak.${DEPLOY_DOMAIN}`) && Path(`/auth/admin`)
+          traefik.http.routers.keycloak-https-admin.tls: "true"
+          traefik.http.routers.keycloak-https.entrypoints: https
+          traefik.http.routers.keycloak-https.rule: Host(`keycloak.${DEPLOY_DOMAIN}`)
+          traefik.http.routers.keycloak-https.tls: "true"
+          traefik.http.services.keycloak.loadbalancer.server.port: "8080"
+    image: quay.io/keycloak/keycloak:legacy
+    environment:
+      DB_VENDOR: POSTGRES
+      DB_ADDR: keycloak-postgres
+      DB_DATABASE: keycloak
+      DB_USER: keycloak
+      DB_SCHEMA: public
+      DB_PASSWORD: password
+      KEYCLOAK_USER: admin
+      KEYCLOAK_PASSWORD: admin
+      KEYCLOAK_IMPORT: /tmp/realm-export.json
+      KC_PROXY: edge
+      PROXY_ADDRESS_FORWARDING: "true"
+    volumes:
+      - "./config/keycloak/initial.json:/tmp/realm-export.json"
+    ports:
+      - 7080:8080 
+    networks:
+      - traefik-public
+    depends_on:
+      - keycloak-postgres
+
+  keycloak-postgres:
+    image: postgres
+    volumes:
+      - "${NFS_SHARED_DOCKERDATA}/postgres-keycloak/db:/var/lib/postgresql/data"
+    environment:
+      POSTGRES_DB: keycloak
+      POSTGRES_USER: keycloak
+      POSTGRES_PASSWORD: password
+    networks:
+        - traefik-public
+
+  nginx1:
+    image: nginx
+    volumes:
+      - "./config/congrats.html:/usr/share/nginx/html/congrats.html"
+    networks:
+        - traefik-public
+    
+
+  
+      
+networks:
+  traefik-public:
+    external: true

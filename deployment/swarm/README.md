@@ -28,14 +28,19 @@ docker network create -d overlay traefik-public
 The docker secrets needed are:
 
 - postgres_password
+- keycloak_postgres_passwd
+- keycloak_admin_passwd
+- keycloak_admin
 
 You can create it with this command:
 
 ```bash
-docker secret create postgres_password -
+docker secret create {secret name} -
 ```
 
-after the **-** insert the secret value and press two times **Ctrl + D**.
+with the secret name instead of **{secret name}**.
+
+After the **-** insert the secret value and press two times **Ctrl + D**.
 
 
 ### Generate deploy yaml
@@ -53,6 +58,7 @@ sudo mkdir -p /data/development/docker_data/traefik
 sudo mkdir -p /data/development/docker_data/traefik/userfiles
 sudo touch /data/development/docker_data/traefik/traefik.log
 sudo touch /data/development/docker_data/traefik/access.log
+sudo mkdir -p /data/development/docker_data/postgres-keycloak/db
 ```
 
 ### Update /etc/hosts file with local development domains
@@ -65,7 +71,9 @@ sudo nano /etc/hosts
 
 and add the following domains in the /etc/hosts file:
 
-- 172.18.0.1   euler.local 
+- 172.18.0.1   euler.local
+- 172.18.0.1   displacement.euler.local
+- 172.18.0.1   auth.euler.local
 
 ### Deploy stack yaml
 
