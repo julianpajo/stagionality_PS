@@ -11,7 +11,7 @@ services:
 
     # GUI Section
 
-    gui-ps:
+    gui:
         deploy:
             labels:
                 traefik.enable: "true"

@@ -16,13 +16,13 @@ services:
     environment:
       DB_ADDR: keycloak-postgres
       DB_DATABASE: keycloak
-      DB_PASSWORD: password
+      DB_PASSWORD_FILE: /run/secrets/keycloak_postgres_passwd
       DB_SCHEMA: public
       DB_USER: keycloak
       DB_VENDOR: POSTGRES
       KC_PROXY: edge
       KEYCLOAK_IMPORT: /tmp/realm-export.json
-      KEYCLOAK_PASSWORD: admin
+      KEYCLOAK_PASSWORD_FILE: /run/secrets/keycloak_admin_passwd
       KEYCLOAK_USER: admin
       PROXY_ADDRESS_FORWARDING: "true"
     image: quay.io/keycloak/keycloak:legacy
@@ -33,6 +33,9 @@ services:
       target: 8080
       published: 7080
       protocol: tcp
+    secrets:
+    - source: keycloak_postgres_passwd
+    - source: keycloak_admin_passwd
     volumes:
     - type: bind
       source: /home/vagrant/stagionality_PS/deployment/swarm/config/keycloak/initial.json
@@ -42,11 +45,13 @@ services:
   keycloak-postgres:
     environment:
       POSTGRES_DB: keycloak
-      POSTGRES_PASSWORD: password
+      POSTGRES_PASSWORD_FILE: /run/secrets/keycloak_postgres_passwd
       POSTGRES_USER: keycloak
     image: postgres
     networks:
       traefik-public: null
+    secrets:
+    - source: keycloak_postgres_passwd
     volumes:
     - type: bind
       source: /data/development/docker_data/postgres-keycloak/db
@@ -81,10 +86,10 @@ services:
       OAUTH2_PROXY_PROVIDER: keycloak-oidc
       OAUTH2_PROXY_PROVIDER_DISPLAY_NAME: Keycloak
       OAUTH2_PROXY_REDEEM_URL: https://keycloak.euler.local/auth/realms/Euler/protocol/openid-connect/token
-      OAUTH2_PROXY_REDIRECT_URL: https://displacement.euler.local/oauth2/callback
+      OAUTH2_PROXY_REDIRECT_URL: https://test.euler.local/oauth2/callback
       OAUTH2_PROXY_SKIP_OIDC_DISCOVERY: "true"
       OAUTH2_PROXY_SKIP_PROVIDER_BUTTON: "true"
-      OAUTH2_PROXY_UPSTREAMS: http://euler_gui-ps/
+      OAUTH2_PROXY_UPSTREAMS: http://euler_gui/
     image: bitnami/oauth2-proxy:7.3.0
     networks:
       traefik-public: null
@@ -102,4 +107,11 @@ services:
 networks:
   traefik-public:
     name: traefik-public
+    external: true
+secrets:
+  keycloak_admin_passwd:
+    name: keycloak_admin_passwd
+    external: true
+  keycloak_postgres_passwd:
+    name: keycloak_postgres_passwd
     external: true

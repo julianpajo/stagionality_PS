@@ -8,7 +8,7 @@ services:
         traefik.backend: gui
         traefik.enable: "true"
         traefik.http.routers.gui.entryPoints: https
-        traefik.http.routers.gui.rule: Host(`test.${DEPLOY_DOMAIN}`)
+        traefik.http.routers.gui.rule: Host(`displacement.${DEPLOY_DOMAIN}`)
         traefik.http.routers.gui.tls: "true"
         traefik.http.services.gui.loadbalancer.server.port: '4180'
     image: bitnami/oauth2-proxy:7.3.0
@@ -16,7 +16,7 @@ services:
       - --http-address
       - 0.0.0.0:4180
     environment:
-      OAUTH2_PROXY_UPSTREAMS: http://nginx1/
+      OAUTH2_PROXY_UPSTREAMS: http://euler_gui/
       OAUTH2_PROXY_PROVIDER_DISPLAY_NAME: Keycloak
       OAUTH2_PROXY_PROVIDER: keycloak-oidc 
       OAUTH2_PROXY_OIDC_ISSUER_URL: https://keycloak.${DEPLOY_DOMAIN}/auth/realms/Euler
@@ -25,7 +25,7 @@ services:
       OAUTH2_PROXY_PASS_ACCESS_TOKEN: "true"
       OAUTH2_PROXY_SKIP_PROVIDER_BUTTON: "true"      
       OAUTH2_PROXY_EMAIL_DOMAINS: '*' 
-      OAUTH2_PROXY_REDIRECT_URL: https://test.${DEPLOY_DOMAIN}/oauth2/callback 
+      OAUTH2_PROXY_REDIRECT_URL: https://displacement.${DEPLOY_DOMAIN}/oauth2/callback 
       OAUTH2_PROXY_COOKIE_SECRET: cYW8ox+3ySQZ5M+92hsZhnUqiQqM5U7B
       OAUTH2_PROXY_SKIP_OIDC_DISCOVERY: "true"
       OAUTH2_PROXY_COOKIE_SECURE: "false"
@@ -61,9 +61,9 @@ services:
       DB_DATABASE: keycloak
       DB_USER: keycloak
       DB_SCHEMA: public
-      DB_PASSWORD: password
+      DB_PASSWORD_FILE: /run/secrets/keycloak_postgres_passwd
       KEYCLOAK_USER: admin
-      KEYCLOAK_PASSWORD: admin
+      KEYCLOAK_PASSWORD_FILE: /run/secrets/keycloak_admin_passwd
       KEYCLOAK_IMPORT: /tmp/realm-export.json
       KC_PROXY: edge
       PROXY_ADDRESS_FORWARDING: "true"
@@ -75,6 +75,10 @@ services:
       - traefik-public
     depends_on:
       - keycloak-postgres
+    secrets:
+      - keycloak_postgres_passwd
+      - keycloak_admin_passwd
+
 
   keycloak-postgres:
     image: postgres
@@ -83,20 +87,24 @@ services:
     environment:
       POSTGRES_DB: keycloak
       POSTGRES_USER: keycloak
-      POSTGRES_PASSWORD: password
+      POSTGRES_PASSWORD_FILE: /run/secrets/keycloak_postgres_passwd
     networks:
         - traefik-public
+    secrets:
+        - keycloak_postgres_passwd
 
-  nginx1:
-    image: nginx
-    volumes:
-      - "./config/congrats.html:/usr/share/nginx/html/congrats.html"
-    networks:
-        - traefik-public
-    
 
-  
-      
 networks:
   traefik-public:
     external: true
+secrets:
+  postgres_passwd:
+    external: true
+    name: postgres_passwd
+  keycloak_postgres_passwd:
+    external: true
+    name: keycloak_postgres_passwd
+  keycloak_admin_passwd:
+    external: true
+    name: keycloak_admin_passwd
+
