@@ -1,25 +1,14 @@
 #!/bin/bash
 
-# YAML file name
-file="euler.yml"
-
-# Check if the file exists
-if [ ! -f "$file" ]; then
-    echo "File $file not found"
-fi
-
-# Find the first line starting with "name" and store it in a variable
-first_line=$(grep -n "^name" "$file" | head -n 1 | cut -d ":" -f 1)
-
-# If a line starts with "name", delete that line from the file
-if [ ! -z "$first_line" ]; then
-    sed -i "${first_line}d" "$file"
-fi
-
-# Remove the quotes around numbers after the "published" string
-sed -i 's/published: "\([0-9]*\)"/published: \1/g' "$file"
-
-
 sudo systemctl stop apache2
 docker stack deploy -c traefik.yml traefik
+docker stack deploy -c auth.yml auth
+
+sleep 5
+
+traefik_ip=$(docker service inspect traefik_proxy --format='{{range .Endpoint.VirtualIPs}}{{.Addr}}{{end}}' | cut -d'/' -f1)
+auth_oauth2proxy_container=$(docker ps -qf "name=auth_oauth2-proxy")
+docker exec -u root -i "$auth_oauth2proxy_container" sh -c "echo '$traefik_ip keycloak.euler.local' >> /etc/hosts"
+
+
 docker stack deploy -c euler.yml euler

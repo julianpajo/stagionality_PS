@@ -32,7 +32,7 @@ services:
         traefik.http.routers.traefik-public-https.service: api@internal
         traefik.http.routers.traefik-public-https.tls: "true"
         traefik.http.services.proxy.loadbalancer.server.port: "8080"
-    image: traefik:v2.10.7
+    image: traefik
     networks:
       traefik-public: null
     ports:
@@ -46,6 +46,10 @@ services:
     - ../certificates/euler.test.crt:/etc/certs/euler.test.crt:rw
     - ../certificates/displacement.test.key:/etc/certs/displacement.test.key:rw
     - ../certificates/displacement.test.crt:/etc/certs/displacement.test.crt:rw
+    - ../certificates/auth.test.key:/etc/certs/auth.test.key:rw
+    - ../certificates/auth.test.crt:/etc/certs/auth.test.crt:rw
+    - ../certificates/keycloak.test.key:/etc/certs/keycloak.test.key:rw
+    - ../certificates/keycloak.test.crt:/etc/certs/keycloak.test.crt:rw
     - type: bind
       source: /var/run/docker.sock
       target: /var/run/docker.sock
