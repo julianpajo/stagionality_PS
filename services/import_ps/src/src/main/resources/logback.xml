@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration debug="false" scan="true" scanPeriod="30 seconds">
+
+    <property resource="application.properties"/>
+
+    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
+            <Pattern>
+                %date{yyyy-MM-dd HH:mm:ss.SSS} %-20.30logger{30} .%-15.20method [%4.4line] %xEx{full} %-6.6level | %message%n
+            </Pattern>
+        </encoder>
+    </appender>
+
+    <appender name="FILE-AUDIT" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <append>false</append>
+        <file>${app.log.home}/${app.log.name}.log</file>
+        <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
+            <Pattern>
+                %date{yyyy-MM-dd HH:mm:ss.SSS} %-30.30logger{30} .%-20.20method [%4.4line] %xEx{full} %-6.6level | %message%n
+            </Pattern>
+        </encoder>
+
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <!-- rollover daily -->
+            <fileNamePattern>${app.log.home}/archived/${app.log.name}.%d{yyyy-MM-dd}.%i.log</fileNamePattern>
+            <timeBasedFileNamingAndTriggeringPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP">
+                <maxFileSize>10MB</maxFileSize>
+            </timeBasedFileNamingAndTriggeringPolicy>
+        </rollingPolicy>
+
+    </appender>
+
+    <appender name="FILE-ERROR" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <append>false</append>
+        <file>${app.log.home}/${app.log.name}.error.log</file>
+        <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
+            <Pattern>
+                %d{yyyy-MM-dd HH:mm:ss} - %msg%n %xEx{full}
+            </Pattern>
+        </encoder>
+
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <!-- rollover daily -->
+            <fileNamePattern>${app.log.home}/archived/${app.log.name}.error.%d{yyyy-MM-dd}.%i.log</fileNamePattern>
+            <timeBasedFileNamingAndTriggeringPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP">
+                <maxFileSize>10MB</maxFileSize>
+            </timeBasedFileNamingAndTriggeringPolicy>
+        </rollingPolicy>
+
+    </appender>
+
+    <!-- TRACE, DEBUG, INFO, WARN, ERROR, ALL or OFF -->
+
+    <!--
+    Hibernate logging options (INFO only shows startup messages)
+    -->
+    <logger name="org.hibernate">
+        <level value="ERROR"/>
+    </logger>
+
+    <!-- log SQL queries executed by Hibernate library -->
+    <!--
+    <logger name="org.hibernate.SQL">
+        <level value="DEBUG" />
+    </logger>
+     -->
+
+    <!-- log values of SQL queries parameters -->
+    <!--
+    <logger name="org.hibernate.type.descriptor.sql.BasicBinder">
+        <level value="TRACE" />
+    </logger>        
+     -->
+
+    <logger name="ch.qos.logback">
+        <level value="WARN"/>
+    </logger>
+
+    <logger name="com.jayway.jsonpath">
+        <level value="WARN"/>
+    </logger>
+
+
+    <!-- Send logs to both console and file audit -->
+    <logger name="it.planetek.rheticus" level="DEBUG" additivity="false">
+        <appender-ref ref="FILE-AUDIT"/>
+        <appender-ref ref="STDOUT"/>
+    </logger>
+
+    <!--
+        <logger name="it.planetek.rheticus.api.displacement.repo.JsonbMeasuresType" >
+            <level value="TRACE" />
+        </logger>
+        <logger name="it.planetek.rheticus.api.displacement.repo.JsonbStringType" >
+            <level value="DEBUG" />
+        </logger>
+     -->
+
+    <logger name="org.springframework.web.filter.CommonsRequestLoggingFilter">
+        <level value="INFO"/>
+    </logger>
+    <logger name="org.springframework">
+        <level value="WARN"/>
+    </logger>
+    <logger name="org.apache">
+        <level value="WARN"/>
+    </logger>
+
+    <root level="DEBUG">
+        <appender-ref ref="FILE-AUDIT"/>
+        <appender-ref ref="STDOUT"/>
+    </root>
+
+</configuration>

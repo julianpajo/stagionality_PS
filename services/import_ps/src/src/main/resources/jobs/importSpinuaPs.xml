@@ -1,0 +1,760 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:batch="http://www.springframework.org/schema/batch"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="
+                    http://www.springframework.org/schema/beans
+                    http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+                    http://www.springframework.org/schema/batch
+                    http://www.springframework.org/schema/batch/spring-batch-3.0.xsd">
+
+    <import resource="../job-context.xml"/>
+
+    <batch:job id="importPsJob">
+        <batch:step id="importDataset.step" parent="importDataset.step.master" next="importMetadata.step"/>
+        <batch:step id="importMetadata.step" parent="importMetadata.step.master" next="importCropParameter.step"/>
+        <batch:step id="importCropParameter.step" parent="importCropParameter.step.master" next="importScatterer.step"/>
+        <batch:step id="importScatterer.step" parent="importScatterer.step.master" next="split.step"/>
+        <batch:split id="split.step" task-executor="splitTaskExecutor">
+            <batch:flow>
+                <batch:step id="importPs.step" parent="importPs.step.master" next="updateAccelerationNorm.step"/>
+                <batch:step id="updateAccelerationNorm.step" parent="updateAccelerationNorm.step.master"
+                            next="refreshMaterializedView.step"/>
+                <batch:step id="refreshMaterializedView.step" parent="refreshMaterializedView.step.master"
+                            next="updateTaskExecutorSplit1"/>
+                <batch:step id="updateTaskExecutorSplit1">
+                    <batch:tasklet ref="updateTaskExecutorTasklet"/>
+                </batch:step>
+            </batch:flow>
+            <batch:flow>
+                <batch:step id="importPsMeasurement.step" parent="importPsMeasurement.step.master"
+                            next="updateTaskExecutorSplit2"/>
+                <batch:step id="updateTaskExecutorSplit2">
+                    <batch:tasklet ref="updateTaskExecutorTasklet"/>
+                </batch:step>
+            </batch:flow>
+        </batch:split>
+    </batch:job>
+
+    <batch:job id="updateAndRefreshPsJob">
+        <batch:step id="updateAndRefreshPsJob_importDataset.step" parent="importDataset.step.master"
+                    next="updateAndRefreshPsJob_importMetadata.step"/>
+        <batch:step id="updateAndRefreshPsJob_importMetadata.step" parent="importMetadata.step.master"
+                    next="updateAndRefreshPsJob_importCropParameter.step"/>
+        <batch:step id="updateAndRefreshPsJob_importCropParameter.step" parent="importCropParameter.step.master"
+                    next="updateAndRefreshPsJob_updateAccelerationNorm.step"/>
+        <batch:step id="updateAndRefreshPsJob_updateAccelerationNorm.step" parent="updateAccelerationNorm.step.master"
+                    next="updateAndRefreshPsJob_refreshMaterializedView.step"/>
+        <batch:step id="updateAndRefreshPsJob_refreshMaterializedView.step"
+                    parent="refreshMaterializedView.step.master"/>
+    </batch:job>
+
+    <batch:job id="refreshOrgMatViewsPsJob">
+        <batch:step id="refreshOrgMatViewsPsJob_importDataset.step" parent="importDataset.step.master"
+                    next="refreshOrgMatViewsPsJob_importMetadata.step"/>
+        <batch:step id="refreshOrgMatViewsPsJob_importMetadata.step" parent="importMetadata.step.master"
+                    next="refreshOrgMatViewsPsJob_importCropParameter.step"/>
+        <batch:step id="refreshOrgMatViewsPsJob_importCropParameter.step" parent="importCropParameter.step.master"
+                    next="refreshOrgMatViewsPsJob_refreshMaterializedView.step"/>
+        <batch:step id="refreshOrgMatViewsPsJob_refreshMaterializedView.step"
+                    parent="refreshMaterializedView.step.master"/>
+    </batch:job>
+
+
+    <batch:step id="importDataset.step.master">
+        <batch:partition step="importDataset.step.slave" partitioner="productXmlPartitioner">
+            <batch:handler grid-size="${importDatasetTaskExecutor.concurrencyLimit}"
+                           task-executor="importDatasetTaskExecutor"/>
+        </batch:partition>
+    </batch:step>
+
+    <batch:step id="importMetadata.step.master">
+        <batch:partition step="importMetadata.step.slave" partitioner="productXmlPartitioner">
+            <batch:handler grid-size="${importMetadataTaskExecutor.concurrencyLimit}"
+                           task-executor="importMetadataTaskExecutor"/>
+        </batch:partition>
+    </batch:step>
+
+    <batch:step id="importCropParameter.step.master">
+        <batch:partition step="importCropParameter.step.slave" partitioner="productXmlPartitioner">
+            <batch:handler grid-size="${importMetadataTaskExecutor.concurrencyLimit}"
+                           task-executor="importMetadataTaskExecutor"/>
+        </batch:partition>
+    </batch:step>
+
+    <batch:step id="importScatterer.step.master">
+        <batch:partition step="importScatterer.step.slave" partitioner="shapefilePartitioner">
+            <batch:handler grid-size="${importScattererTaskExecutor.concurrencyLimit}"
+                           task-executor="importScattererTaskExecutor"/>
+        </batch:partition>
+    </batch:step>
+
+    <batch:step id="importPs.step.master">
+        <batch:partition step="importPs.step.slave" partitioner="shapefilePartitioner">
+            <batch:handler grid-size="${importTaskExecutor.concurrencyLimit}" task-executor="importTaskExecutor"/>
+        </batch:partition>
+    </batch:step>
+
+    <batch:step id="importPsMeasurement.step.master">
+        <batch:partition step="importPsMeasurement.step.slave" partitioner="shapefilePartitioner">
+            <batch:handler grid-size="${importMeasurementTaskExecutor.concurrencyLimit}"
+                           task-executor="importMeasurementTaskExecutor"/>
+        </batch:partition>
+    </batch:step>
+
+    <batch:step id="updateAccelerationNorm.step.master">
+        <batch:tasklet task-executor="updateAccelerationNormTaskExecutor"
+                       throttle-limit="${maxConcurrencyLimit}">
+            <batch:chunk reader="accelerationNormReader"
+                         processor="accelerationNormProcessor"
+                         writer="accelerationNormWriter"
+                         commit-interval="1"/>
+        </batch:tasklet>
+    </batch:step>
+
+    <batch:step id="refreshMaterializedView.step.master">
+        <batch:tasklet task-executor="refreshMvTaskExecutor"
+                       throttle-limit="${maxConcurrencyLimit}">
+            <batch:chunk reader="refreshMaterializedViewReader"
+                         writer="refreshMaterializedViewWriter"
+                         commit-interval="1"/>
+        </batch:tasklet>
+    </batch:step>
+
+
+    <batch:step id="importDataset.step.slave">
+        <batch:tasklet>
+            <batch:chunk reader="datasetReader"
+                         processor="datasetProcessor"
+                         writer="datasetWriter"
+                         commit-interval="${import.dataset.commit.interval}"/>
+        </batch:tasklet>
+    </batch:step>
+
+    <batch:step id="importMetadata.step.slave">
+        <batch:tasklet>
+            <batch:chunk reader="metadataReader"
+                         processor="metadataProcessor"
+                         writer="metadataWriter"
+                         commit-interval="${import.crop.commit.interval}"/>
+        </batch:tasklet>
+    </batch:step>
+
+    <batch:step id="importCropParameter.step.slave">
+        <batch:tasklet>
+            <batch:chunk reader="metadataReader"
+                         processor="metadataProcessor"
+                         writer="cropParameterWriter"
+                         commit-interval="${import.crop.commit.interval}"/>
+        </batch:tasklet>
+    </batch:step>
+
+    <batch:step id="importScatterer.step.slave">
+        <batch:tasklet>
+            <batch:chunk reader="scattererReader"
+                         processor="scattererProcessor"
+                         writer="scattererWriter"
+                         commit-interval="${scatterer.commit.interval}"/>
+        </batch:tasklet>
+        <batch:listeners>
+            <batch:listener ref="scattererCountListener"/>
+        </batch:listeners>
+    </batch:step>
+
+    <batch:step id="importPs.step.slave">
+        <batch:tasklet>
+            <batch:chunk reader="shapefileReader"
+                         processor="shapefileProcessor"
+                         writer="shapefileClassifierWriter"
+                         commit-interval="${ps.commit.interval}"/>
+        </batch:tasklet>
+        <batch:listeners>
+            <batch:listener ref="psCountListener"/>
+        </batch:listeners>
+    </batch:step>
+
+    <batch:step id="importPsMeasurement.step.slave">
+        <batch:tasklet>
+            <batch:chunk reader="shapefileMeasurementReader"
+                         processor="shapefileMeasurementProcessor"
+                         writer="shapefileMeasurementClassifierWriter"
+                         commit-interval="${measurement.commit.interval}"/>
+        </batch:tasklet>
+        <batch:listeners>
+            <batch:listener ref="psMeasurementCountListener"/>
+        </batch:listeners>
+    </batch:step>
+
+
+    <bean id="splitTaskExecutor" class="org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor">
+        <property name="corePoolSize" value="${splitTaskExecutor.concurrencyLimit}"/>
+        <property name="maxPoolSize" value="${maxConcurrencyLimit}"/>
+        <property name="allowCoreThreadTimeOut" value="true"/>
+        <property name="keepAliveSeconds" value="${keepAliveSeconds}"/>
+    </bean>
+
+    <bean id="importDatasetTaskExecutor" class="org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor">
+        <property name="corePoolSize" value="${importDatasetTaskExecutor.concurrencyLimit}"/>
+        <property name="maxPoolSize" value="${maxConcurrencyLimit}"/>
+        <property name="allowCoreThreadTimeOut" value="true"/>
+        <property name="keepAliveSeconds" value="${keepAliveSeconds}"/>
+    </bean>
+
+    <bean id="importMetadataTaskExecutor" class="org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor">
+        <property name="corePoolSize" value="${importMetadataTaskExecutor.concurrencyLimit}"/>
+        <property name="maxPoolSize" value="${maxConcurrencyLimit}"/>
+        <property name="allowCoreThreadTimeOut" value="true"/>
+        <property name="keepAliveSeconds" value="${keepAliveSeconds}"/>
+    </bean>
+
+    <bean id="importScattererTaskExecutor" class="org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor">
+        <property name="corePoolSize" value="${importScattererTaskExecutor.concurrencyLimit}"/>
+        <property name="maxPoolSize" value="${maxConcurrencyLimit}"/>
+        <property name="allowCoreThreadTimeOut" value="true"/>
+        <property name="keepAliveSeconds" value="${keepAliveSeconds}"/>
+    </bean>
+
+    <bean id="importTaskExecutor" class="org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor">
+        <property name="corePoolSize" value="${importTaskExecutor.concurrencyLimit}"/>
+        <property name="maxPoolSize" value="${maxConcurrencyLimit}"/>
+        <property name="allowCoreThreadTimeOut" value="true"/>
+        <property name="keepAliveSeconds" value="${keepAliveSeconds}"/>
+    </bean>
+
+    <bean id="importMeasurementTaskExecutor" class="org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor">
+        <property name="corePoolSize" value="${importMeasurementTaskExecutor.concurrencyLimit}"/>
+        <property name="maxPoolSize" value="${maxConcurrencyLimit}"/>
+        <property name="allowCoreThreadTimeOut" value="true"/>
+        <property name="keepAliveSeconds" value="${keepAliveSeconds}"/>
+    </bean>
+
+    <bean id="updateAccelerationNormTaskExecutor"
+          class="org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor">
+        <property name="corePoolSize" value="${updateAccelerationNormTaskExecutor.concurrencyLimit}"/>
+        <property name="maxPoolSize" value="${maxConcurrencyLimit}"/>
+        <property name="allowCoreThreadTimeOut" value="true"/>
+        <property name="keepAliveSeconds" value="${keepAliveSeconds}"/>
+    </bean>
+
+    <bean id="refreshMvTaskExecutor" class="org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor">
+        <property name="corePoolSize" value="${refreshMvTaskExecutor.concurrencyLimit}"/>
+        <property name="maxPoolSize" value="${maxConcurrencyLimit}"/>
+        <property name="allowCoreThreadTimeOut" value="true"/>
+        <property name="keepAliveSeconds" value="${keepAliveSeconds}"/>
+    </bean>
+
+
+    <bean id="shapefilePartitioner" class="org.springframework.batch.core.partition.support.MultiResourcePartitioner">
+        <property name="resources" value="file:${job.import.reader.shapefilePath}/**/{filename:SPINUA[^AM]}*.shp"/>
+    </bean>
+
+    <bean id="productXmlPartitioner" class="org.springframework.batch.core.partition.support.MultiResourcePartitioner">
+        <property name="resources" value="file:${job.import.reader.shapefilePath}/**/*.xml"/>
+    </bean>
+
+
+    <!-- Bean to handle import of dataset -->
+    <bean id="datasetReader"
+          class="it.planetek.rheticus.displacement.etl.dataset.step.Reader"
+          scope="step" autowire-candidate="false">
+        <property name="resource" value="#{stepExecutionContext[fileName]}"/>
+    </bean>
+
+    <bean id="datasetProcessor"
+          class="it.planetek.rheticus.displacement.etl.dataset.step.Processor"/>
+
+    <bean id="datasetWriter"
+          class="it.planetek.rheticus.displacement.etl.dataset.step.Writer">
+        <property name="dataSource" ref="rheticusDatasource"/>
+        <property name="itemSqlParameterSourceProvider">
+            <bean class="org.springframework.batch.item.database.BeanPropertyItemSqlParameterSourceProvider"/>
+        </property>
+        <property name="assertUpdates" value="false"/>
+        <property name="sql" value="INSERT INTO dataset (sensor_id,
+                                                         supermaster_uid,
+                                                         beam,
+                                                         name)
+                                           VALUES ((select id from sensor where code=:sensorCode),
+                                                   :supermasterUid,
+                                                   :beam,
+                                                   :datasetName)
+                                           ON CONFLICT (sensor_id, supermaster_uid, beam)
+                                           DO UPDATE SET name=:datasetName"/>
+    </bean>
+    <!---->
+
+    <!-- Bean to handle metadata -->
+    <bean id="metadataReader"
+          class="it.planetek.rheticus.displacement.etl.metadata.step.Reader"
+          scope="step" autowire-candidate="false">
+        <property name="resource" value="#{stepExecutionContext[fileName]}"/>
+    </bean>
+
+    <bean id="metadataProcessor"
+          class="it.planetek.rheticus.displacement.etl.metadata.step.Processor"/>
+
+    <bean id="metadataWriter"
+          class="it.planetek.rheticus.displacement.etl.metadata.step.Writer">
+        <property name="dataSource" ref="rheticusDatasource"/>
+        <property name="itemSqlParameterSourceProvider">
+            <bean class="org.springframework.batch.item.database.BeanPropertyItemSqlParameterSourceProvider"/>
+        </property>
+        <property name="assertUpdates" value="false"/>
+        <property name="sql" value="INSERT INTO crop (dataset_id,
+                                                      code,
+                                                      geom,
+                                                      pass)
+                                           VALUES ((SELECT id
+                                                    FROM dataset
+                                                    WHERE sensor_id=(SELECT id FROM sensor WHERE code=:sensorCode)
+                                                        AND supermaster_uid=:supermasterUid AND beam=:beam),
+                                                   :code,
+                                                   ST_MakeEnvelope(:minLon, :minLat, :maxLon, :maxLat, 4326),
+                                                   :pass)
+                                           ON CONFLICT (dataset_id, code) DO UPDATE
+                                           SET geom=ST_MakeEnvelope(:minLon, :minLat, :maxLon, :maxLat, 4326),
+                                               pass=:pass"/>
+    </bean>
+    <bean id="cropParameterWriter"
+          class="it.planetek.rheticus.displacement.etl.metadata.step.CropParameterWriter">
+        <property name="dataSource" ref="rheticusDatasource"/>
+        <property name="itemSqlParameterSourceProvider">
+            <bean class="org.springframework.batch.item.database.BeanPropertyItemSqlParameterSourceProvider"/>
+        </property>
+        <property name="assertUpdates" value="false"/>
+        <property name="sql" value="INSERT INTO crop_parameter (crop_id,
+                                                                type,
+                                                                coh_min,
+                                                                coh_suggested,
+                                                                status,
+                                                                metadata)
+                                           VALUES ((SELECT id
+                                                    FROM crop
+                                                    WHERE dataset_id = (SELECT id
+                                                                        FROM dataset
+                                                                        WHERE sensor_id=(SELECT id FROM sensor WHERE code=:sensorCode)
+                                                                              AND supermaster_uid=:supermasterUid AND beam=:beam)
+                                                          AND code = :code),
+                                                   :target.id,
+                                                   :cohMin,
+                                                   :cohSuggested,
+                                                   :status,
+                                                   cast(:metadata as json))
+                                           ON CONFLICT (crop_id, type) DO UPDATE
+                                           SET coh_min=:cohMin,
+                                               coh_suggested=:cohSuggested,
+                                               metadata=cast(:metadata as json)"/>
+    </bean>
+    <!---->
+
+    <!-- Bean to read scatterer from shapefile -->
+    <bean id="scattererReader"
+          class="it.planetek.rheticus.displacement.etl.ps.step.ScattererReader"
+          scope="step" autowire-candidate="false">
+        <property name="resource" value="#{stepExecutionContext[fileName]}"/>
+    </bean>
+
+    <bean id="scattererProcessor" class="it.planetek.rheticus.displacement.etl.ps.step.ScattererProcessor"/>
+
+    <bean id="scattererWriter"
+          class="it.planetek.rheticus.displacement.etl.ps.step.ScattererWriter">
+        <property name="dataSource" ref="rheticusDatasource"/>
+        <property name="itemSqlParameterSourceProvider">
+            <bean class="org.springframework.batch.item.database.BeanPropertyItemSqlParameterSourceProvider"/>
+        </property>
+        <property name="assertUpdates" value="false"/>
+        <property name="sql" value="INSERT INTO scatterer (dataset_id, crop_id, code)
+                                           SELECT (SELECT id
+                                                    FROM dataset
+                                                    WHERE sensor_id=(SELECT id
+                                                                     FROM sensor
+                                                                     WHERE code=:cropIdentifier.sensorCode)
+                                                          AND supermaster_uid=:cropIdentifier.supermasterUid
+                                                          AND beam=:cropIdentifier.beam) as dat_id,
+                                                   (SELECT id FROM crop WHERE code=:cropIdentifier.code AND dataset_id=(SELECT id
+                                                    FROM dataset
+                                                    WHERE sensor_id=(SELECT id
+                                                                     FROM sensor
+                                                                     WHERE code=:cropIdentifier.sensorCode)
+                                                          AND supermaster_uid=:cropIdentifier.supermasterUid
+                                                          AND beam=:cropIdentifier.beam)) as cro_id,
+                                                   :code as co 
+                                                   WHERE NOT EXISTS (SELECT dataset_id, code from scatterer where dataset_id=(SELECT id
+                                                    FROM dataset
+                                                    WHERE sensor_id=(SELECT id
+                                                                     FROM sensor
+                                                                     WHERE code=:cropIdentifier.sensorCode)
+                                                          AND supermaster_uid=:cropIdentifier.supermasterUid
+                                                          AND beam=:cropIdentifier.beam) and code=:code)"/>
+    </bean>
+    <!---->
+
+    <!-- Bean to handle ps -->
+    <bean id="shapefileReader"
+          class="it.planetek.rheticus.displacement.etl.ps.step.ShapefileDisplacementReader"
+          scope="step" autowire-candidate="false">
+        <property name="resource" value="#{stepExecutionContext[fileName]}"/>
+    </bean>
+
+    <bean id="shapefileProcessor" class="it.planetek.rheticus.displacement.etl.ps.step.ShapefileDisplacementProcessor"/>
+
+    <bean id="shapefileClassifierWriter" class="org.springframework.batch.item.support.ClassifierCompositeItemWriter">
+        <property name="classifier" ref="shapefileClassifier"/>
+    </bean>
+    <bean id="shapefileClassifier" class="org.springframework.classify.BackToBackPatternClassifier">
+        <property name="routerDelegate">
+            <bean class="it.planetek.rheticus.displacement.etl.ps.step.ScattererDataWriterRouteImpl"/>
+        </property>
+        <property name="matcherMap">
+            <map>
+                <entry key="ps" value-ref="psWriter"/>
+                <entry key="ds" value-ref="dsWriter"/>
+                <entry key="cr" value-ref="crWriter"/>
+            </map>
+        </property>
+    </bean>
+
+    <bean id="psWriter"
+          class="it.planetek.rheticus.displacement.etl.ps.step.ShapefileDisplacementWriter">
+        <property name="dataSource" ref="rheticusDatasource"/>
+        <property name="itemSqlParameterSourceProvider">
+            <bean class="org.springframework.batch.item.database.BeanPropertyItemSqlParameterSourceProvider"/>
+        </property>
+        <property name="assertUpdates" value="false"/>
+        <property name="sql" value="INSERT INTO ps (scatterer_id,
+                                                    lat,
+                                                    lon,
+                                                    height,
+                                                    coherence,
+                                                    periodic_properties)
+                                           VALUES ((SELECT id
+                                                    FROM scatterer
+                                                    WHERE dataset_id=(SELECT id
+                                                                      FROM dataset
+                                                                      WHERE sensor_id=(SELECT id
+                                                                                       FROM sensor
+                                                                                       WHERE code=:cropIdentifier.sensorCode)
+                                                                                             AND supermaster_uid=:cropIdentifier.supermasterUid
+                                                                                             AND beam=:cropIdentifier.beam)
+                                                          AND code=:scattererCode),
+                                                   :latitude, :longitude,
+                                                   :height,
+                                                   :coherence,
+                                                   cast(:periodicPropertiesString as json))
+                                           ON CONFLICT (scatterer_id) DO UPDATE
+                                           SET lat=:latitude,
+                                               lon=:longitude,
+                                               height=:height,
+                                               coherence=:coherence,
+                                               periodic_properties=cast(:periodicPropertiesString as json)"/>
+    </bean>
+
+    <bean id="dsWriter"
+          class="it.planetek.rheticus.displacement.etl.ps.step.ShapefileDisplacementWriter">
+        <property name="dataSource" ref="rheticusDatasource"/>
+        <property name="itemSqlParameterSourceProvider">
+            <bean class="org.springframework.batch.item.database.BeanPropertyItemSqlParameterSourceProvider"/>
+        </property>
+        <property name="assertUpdates" value="false"/>
+        <property name="sql" value="INSERT INTO ds (scatterer_id,
+                                                    lat,
+                                                    lon,
+                                                    height,
+                                                    coherence,
+                                                    periodic_properties)
+                                           VALUES ((SELECT id
+                                                    FROM scatterer
+                                                    WHERE dataset_id=(SELECT id
+                                                                      FROM dataset
+                                                                      WHERE sensor_id=(SELECT id
+                                                                                       FROM sensor
+                                                                                       WHERE code=:cropIdentifier.sensorCode)
+                                                                                             AND supermaster_uid=:cropIdentifier.supermasterUid
+                                                                                             AND beam=:cropIdentifier.beam)
+                                                          AND code=:scattererCode),
+                                                   :latitude, :longitude,
+                                                   :height,
+                                                   :coherence,
+                                                   cast(:periodicPropertiesString as json))
+                                           ON CONFLICT (scatterer_id) DO UPDATE
+                                           SET lat=:latitude,
+                                               lon=:longitude,
+                                               height=:height,
+                                               coherence=:coherence,
+                                               periodic_properties=cast(:periodicPropertiesString as json)"/>
+    </bean>
+    <bean id="crWriter"
+          class="it.planetek.rheticus.displacement.etl.ps.step.ShapefileDisplacementWriter">
+        <property name="dataSource" ref="rheticusDatasource"/>
+        <property name="itemSqlParameterSourceProvider">
+            <bean class="org.springframework.batch.item.database.BeanPropertyItemSqlParameterSourceProvider"/>
+        </property>
+        <property name="assertUpdates" value="false"/>
+        <property name="sql" value="INSERT INTO cr_scatterer (scatterer_id,
+                                                              corner_reflector_id,
+                                                              lat,
+                                                              lon,
+                                                              height,
+                                                              coherence,
+                                                              periodic_properties)
+                                                       VALUES ((SELECT id
+                                                                FROM scatterer
+                                                                WHERE dataset_id=(SELECT id
+                                                                                  FROM dataset
+                                                                                  WHERE sensor_id=(SELECT id
+                                                                                                   FROM sensor
+                                                                                                   WHERE code=:cropIdentifier.sensorCode)
+                                                                                                         AND supermaster_uid=:cropIdentifier.supermasterUid
+                                                                                                         AND beam=:cropIdentifier.beam)
+                                                                      AND code=:scattererCode),
+                                                                (SELECT id
+                                                                FROM corner_reflector
+                                                                WHERE id=:cornerReflectorId),
+                                                               :latitude, :longitude,
+                                                               :height,
+                                                               :coherence,
+                                                               cast(:periodicPropertiesString as json))
+                                                       ON CONFLICT (scatterer_id) DO UPDATE
+                                                       SET lat=:latitude,
+                                                           lon=:longitude,
+                                                           height=:height,
+                                                           coherence=:coherence,
+                                                           corner_reflector_id=(SELECT id
+                                                                                FROM corner_reflector
+                                                                                WHERE id=:cornerReflectorId),
+                                                           periodic_properties=cast(:periodicPropertiesString as json)"/>
+    </bean>
+    <!---->
+
+    <!-- Bean to handle ps measurement -->
+    <bean id="shapefileMeasurementReader"
+          class="it.planetek.rheticus.displacement.etl.ps.step.ShapefileDisplacementMeasurementReader"
+          scope="step" autowire-candidate="false">
+        <property name="resource" value="#{stepExecutionContext[fileName]}"/>
+    </bean>
+
+    <bean id="shapefileMeasurementProcessor"
+          class="it.planetek.rheticus.displacement.etl.ps.step.ShapefileDisplacementMeasurementProcessor"/>
+
+    <bean id="shapefileMeasurementClassifierWriter"
+          class="org.springframework.batch.item.support.ClassifierCompositeItemWriter">
+        <property name="classifier" ref="shapefileMeasurementClassifier"/>
+    </bean>
+
+    <bean id="shapefileMeasurementClassifier" class="org.springframework.classify.BackToBackPatternClassifier">
+        <property name="routerDelegate">
+            <bean class="it.planetek.rheticus.displacement.etl.ps.step.ScattererDataWriterRouteImpl"/>
+        </property>
+        <property name="matcherMap">
+            <map>
+                <entry key="ps" value-ref="psMeasurementWriter"/>
+                <entry key="ds" value-ref="dsMeasurementWriter"/>
+                <entry key="cr" value-ref="crMeasurementWriter"/>
+            </map>
+        </property>
+    </bean>
+
+    <bean id="psMeasurementWriter"
+          class="it.planetek.rheticus.displacement.etl.ps.step.ShapefileDisplacementWriter">
+        <property name="dataSource" ref="rheticusDatasource"/>
+        <property name="itemSqlParameterSourceProvider">
+            <bean class="org.springframework.batch.item.database.BeanPropertyItemSqlParameterSourceProvider"/>
+        </property>
+        <property name="assertUpdates" value="false"/>
+        <property name="sql" value="INSERT INTO ps_measurement (scatterer_id,
+                                                                measurement)
+                                           VALUES ((SELECT id
+                                                    FROM scatterer
+                                                    WHERE dataset_id=(SELECT id
+                                                                      FROM dataset
+                                                                      WHERE sensor_id=(SELECT id
+                                                                                       FROM sensor
+                                                                                       WHERE code=:cropIdentifier.sensorCode)
+                                                                                             AND supermaster_uid=:cropIdentifier.supermasterUid
+                                                                                             AND beam=:cropIdentifier.beam)
+                                                          AND code=:scattererCode),
+                                                   :displacementMeasuresString)
+                                           ON CONFLICT (scatterer_id) DO UPDATE
+                                           SET measurement=:displacementMeasuresString"/>
+    </bean>
+
+    <bean id="dsMeasurementWriter"
+          class="it.planetek.rheticus.displacement.etl.ps.step.ShapefileDisplacementWriter">
+        <property name="dataSource" ref="rheticusDatasource"/>
+        <property name="itemSqlParameterSourceProvider">
+            <bean class="org.springframework.batch.item.database.BeanPropertyItemSqlParameterSourceProvider"/>
+        </property>
+        <property name="assertUpdates" value="false"/>
+        <property name="sql" value="INSERT INTO ds_measurement (scatterer_id,
+                                                                measurement)
+                                           VALUES ((SELECT id
+                                                    FROM scatterer
+                                                    WHERE dataset_id=(SELECT id
+                                                                      FROM dataset
+                                                                      WHERE sensor_id=(SELECT id
+                                                                                       FROM sensor
+                                                                                       WHERE code=:cropIdentifier.sensorCode)
+                                                                                             AND supermaster_uid=:cropIdentifier.supermasterUid
+                                                                                             AND beam=:cropIdentifier.beam)
+                                                          AND code=:scattererCode),
+                                                   :displacementMeasuresString)
+                                           ON CONFLICT (scatterer_id) DO UPDATE
+                                           SET measurement=:displacementMeasuresString"/>
+    </bean>
+
+    <bean id="crMeasurementWriter"
+          class="it.planetek.rheticus.displacement.etl.ps.step.ShapefileDisplacementWriter">
+        <property name="dataSource" ref="rheticusDatasource"/>
+        <property name="itemSqlParameterSourceProvider">
+            <bean class="org.springframework.batch.item.database.BeanPropertyItemSqlParameterSourceProvider"/>
+        </property>
+        <property name="assertUpdates" value="false"/>
+        <property name="sql" value="INSERT INTO cr_scatterer_measurement (scatterer_id,
+                                                                measurement)
+                                           VALUES ((SELECT id
+                                                    FROM scatterer
+                                                    WHERE dataset_id=(SELECT id
+                                                                      FROM dataset
+                                                                      WHERE sensor_id=(SELECT id
+                                                                                       FROM sensor
+                                                                                       WHERE code=:cropIdentifier.sensorCode)
+                                                                                             AND supermaster_uid=:cropIdentifier.supermasterUid
+                                                                                             AND beam=:cropIdentifier.beam)
+                                                          AND code=:scattererCode),
+                                                   :displacementMeasuresString)
+                                           ON CONFLICT (scatterer_id) DO UPDATE
+                                           SET measurement=:displacementMeasuresString"/>
+    </bean>
+    <!---->
+
+    <!-- Bean to handle update acceleration norm -->
+    <bean id="accelerationNormReader"
+          class="it.planetek.rheticus.displacement.etl.ps.step.AccelerationNormReader"
+          scope="step" autowire-candidate="false">
+        <property name="dataSource" ref="rheticusDatasourceForCursor"/>
+        <property name="sql" value="SELECT id
+                                    FROM crop
+                                    WHERE code = ANY (SELECT unnest(string_to_array(?, ',')::text[]))
+                                          AND dataset_id = ANY ((SELECT id
+                                                                 FROM dataset
+                                                                 WHERE sensor_id= ANY (SELECT id
+                                                                                       FROM sensor
+                                                                                       WHERE code = ANY (string_to_array(?,',')::text[]))
+                                                                       AND supermaster_uid = ANY (string_to_array(?,',')::text[])
+                                                                       AND beam = ANY (string_to_array(?,',')::text[])))"/>
+        <property name="rowMapper">
+            <bean class="it.planetek.rheticus.displacement.etl.util.CropRowMapper"/>
+        </property>
+    </bean>
+
+    <bean id="accelerationNormProcessor"
+          class="it.planetek.rheticus.displacement.etl.ps.step.AccelerationNormProcessor"/>
+
+    <bean id="accelerationNormWriter"
+          class="it.planetek.rheticus.displacement.etl.ps.step.AccelerationNormWriter">
+        <property name="dataSource" ref="rheticusDatasource"/>
+        <property name="itemSqlParameterSourceProvider">
+            <bean class="org.springframework.batch.item.database.BeanPropertyItemSqlParameterSourceProvider"/>
+        </property>
+        <property name="assertUpdates" value="false"/>
+        <property name="sql" value="select update_acceleration_norm(:id)"/>
+    </bean>
+    <!---->
+
+    <!-- Bean to handle refresh materialized view -->
+    <bean id="refreshMaterializedViewReader"
+          class="it.planetek.rheticus.displacement.etl.materializedview.step.MaterializedViewOrgReader">
+        <property name="dataSource" ref="rheticusDatasourceForCursor"/>
+        <property name="sql" value="SELECT DISTINCT(alias)
+                                    FROM organization
+                                    JOIN deal ON deal.organization_id=organization.id
+                                    JOIN crop ON ST_Intersects(crop.geom, deal.geom)
+                                    WHERE alias NOT IN (SELECT unnest(string_to_array(?, ',')::text[]))
+                                          AND crop.id = ANY (SELECT id
+                                                           FROM crop
+                                                           WHERE code = ANY (SELECT unnest(string_to_array(?, ',')::text[]))
+                                                                 AND dataset_id = ANY (SELECT id
+                                                                                       FROM dataset
+                                                                                       WHERE sensor_id= ANY (SELECT id
+                                                                                                             FROM sensor
+                                                                                                             WHERE code = ANY (string_to_array(?,',')::text[]))
+                                                                                             AND supermaster_uid = ANY (string_to_array(?,',')::text[])
+                                                                                             AND beam = ANY (string_to_array(?,',')::text[])))"/>
+        <property name="rowMapper">
+            <bean class="it.planetek.rheticus.displacement.etl.util.OrganizationRowMapper"/>
+        </property>
+    </bean>
+
+    <bean id="refreshMaterializedViewWriter"
+          class="it.planetek.rheticus.displacement.etl.materializedview.step.MaterializedViewOrgWriter">
+        <property name="dataSource" ref="rheticusDatasource"/>
+        <property name="itemSqlParameterSourceProvider">
+            <bean class="org.springframework.batch.item.database.BeanPropertyItemSqlParameterSourceProvider"/>
+        </property>
+        <property name="assertUpdates" value="false"/>
+        <property name="sql"
+                  value="SELECT refresh_vwm_ps_organization(:alias)"/>
+    </bean>
+    <!---->
+
+    <bean id="updateTaskExecutorTasklet"
+          class="it.planetek.rheticus.displacement.etl.common.UpdateTaskExecutorTasklet"/>
+
+    <!-- Beans to log chunk execution -->
+    <bean id="scattererCountListener" scope="step" class="it.planetek.rheticus.displacement.etl.common.ChunkCountListener">
+        <property name="maxKey" value="SCATTERER_READER.read.count.max"/>
+        <property name="commitInterval" value="${scatterer.commit.interval}"/>
+        <property name="itemName" value="SCATTERER"/>
+        <property name="loggingInterval" value="1000"/>
+        <property name="cropId" value="#{stepExecutionContext[cropId]}"/>
+        <property name="shapefileName" value="#{stepExecutionContext[shapefileName]}"/>
+    </bean>
+    <bean id="psCountListener" scope="step" class="it.planetek.rheticus.displacement.etl.common.ChunkCountListener">
+        <property name="maxKey" value="SHAPEFILE_READER.read.count.max"/>
+        <property name="commitInterval" value="${ps.commit.interval}"/>
+        <property name="itemName" value="PS"/>
+        <property name="loggingInterval" value="1000"/>
+        <property name="cropId" value="#{stepExecutionContext[cropId]}"/>
+        <property name="shapefileName" value="#{stepExecutionContext[shapefileName]}"/>
+    </bean>
+    <bean id="psMeasurementCountListener" scope="step" class="it.planetek.rheticus.displacement.etl.common.ChunkCountListener">
+        <property name="maxKey" value="SHAPEFILE_MEASUREMENT_READER.read.count.max"/>
+        <property name="commitInterval" value="${measurement.commit.interval}"/>
+        <property name="itemName" value="PS_MEASUREMENT"/>
+        <property name="loggingInterval" value="1000"/>
+        <property name="cropId" value="#{stepExecutionContext[cropId]}"/>
+        <property name="shapefileName" value="#{stepExecutionContext[shapefileName]}"/>
+    </bean>
+    <!---->
+
+
+    <bean id="rheticusDatasource" class="com.zaxxer.hikari.HikariDataSource">
+        <property name="dataSourceClassName" value="${db.datasource.class.name}"/>
+        <property name="dataSourceProperties">
+            <props>
+                <prop key="user">${db.datasource.username}</prop>
+                <prop key="password">${db.datasource.password}</prop>
+                <prop key="databaseName">${db.datasource.databaseName}</prop>
+                <prop key="portNumber">${db.datasource.portNumber}</prop>
+                <prop key="serverName">${db.datasource.serverName}</prop>
+            </props>
+        </property>
+        <property name="maximumPoolSize" value="${maxConcurrencyLimit}"/>
+    </bean>
+
+    <!-- Connections used by the cursor are leaked. Actually 2 are used so increase this value if you need more -->
+    <bean id="rheticusDatasourceForCursor" class="com.zaxxer.hikari.HikariDataSource">
+        <property name="dataSourceClassName" value="${db.datasource.class.name}"/>
+        <property name="dataSourceProperties">
+            <props>
+                <prop key="user">${db.datasource.username}</prop>
+                <prop key="password">${db.datasource.password}</prop>
+                <prop key="databaseName">${db.datasource.databaseName}</prop>
+                <prop key="portNumber">${db.datasource.portNumber}</prop>
+                <prop key="serverName">${db.datasource.serverName}</prop>
+            </props>
+        </property>
+        <property name="maximumPoolSize" value="10"/>
+    </bean>
+
+</beans>

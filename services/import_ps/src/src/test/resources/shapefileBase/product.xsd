@@ -1,0 +1,305 @@
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:element name="processor_output_metadata">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element type="xs:string" name="project">
+          <xs:annotation>
+            <xs:documentation>project name: Rheticus Displacement</xs:documentation>
+          </xs:annotation>
+        </xs:element>
+        <xs:element type="xs:string" name="organization">
+          <xs:annotation>
+            <xs:documentation>company name: Planetek_GAP</xs:documentation>
+          </xs:annotation>
+        </xs:element>
+        <xs:element type="xs:string" name="author">
+          <xs:annotation>
+            <xs:documentation>author name: Name Surname</xs:documentation>
+          </xs:annotation>
+        </xs:element>
+        <xs:element name="BackEnd">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element type="xs:string" name="name">
+                <xs:annotation>
+                  <xs:documentation>BackEnd name: GAP_SPINUA_S1_IW_BackEnd</xs:documentation>
+                </xs:annotation>
+              </xs:element>
+              <xs:element type="xs:string" name="version">
+                <xs:annotation>
+                  <xs:documentation>BackEnd release version: vYYYYMMDD</xs:documentation>
+                </xs:annotation>
+              </xs:element>
+              <xs:element name="modules">
+                <xs:complexType>
+                  <xs:sequence>
+                    <xs:element type="xs:string" name="module">
+                      <xs:annotation>
+                        <xs:documentation>Name of the specific BackEnd Module</xs:documentation>
+                      </xs:annotation>
+                      <xs:attribute name="ID" type="xs:string" use="required"/>
+                      <xs:attribute name="environment" type="xs:string" use="required"/>
+                      <xs:attribute name="version" type="xs:string" use="required"/>
+                    </xs:element>
+                  </xs:sequence>
+                </xs:complexType>
+              </xs:element>
+              <xs:element type="xs:string" name="description">
+                <xs:annotation>
+                  <xs:documentation>BackEnd description</xs:documentation>
+                </xs:annotation>
+              </xs:element>
+              <xs:element type="xs:string" name="license">
+                <xs:annotation>
+                  <xs:documentation>BackEnd license name</xs:documentation>
+                </xs:annotation>
+              </xs:element>
+            </xs:sequence>
+          </xs:complexType>
+        </xs:element>
+        <xs:element name="CoreLib">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element type="xs:string" name="name">
+                <xs:annotation>
+                  <xs:documentation>CoreLib name: SPINUA</xs:documentation>
+                </xs:annotation>
+              </xs:element>
+              <xs:element type="xs:string" name="version">
+                <xs:annotation>
+                  <xs:documentation>CoreLib release version</xs:documentation>
+                </xs:annotation>
+              </xs:element>
+              <xs:element type="xs:string" name="description">
+                <xs:annotation>
+                  <xs:documentation>CoreLib description</xs:documentation>
+                </xs:annotation>
+              </xs:element>
+              <xs:element type="xs:string" name="license">
+                <xs:annotation>
+                  <xs:documentation>CoreLib license name</xs:documentation>
+                </xs:annotation>
+              </xs:element>
+            </xs:sequence>
+          </xs:complexType>
+        </xs:element>
+        <xs:element name="ExtLib">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element type="xs:string" name="name">
+                <xs:annotation>
+                  <xs:documentation>ExtLib name: GAP_SPINUA_S1_IW_ExtLib</xs:documentation>
+                </xs:annotation>
+              </xs:element>
+              <xs:element name="modules">
+                <xs:complexType>
+                  <xs:sequence>
+                    <xs:element type="xs:string" name="module">
+                      <xs:annotation>
+                        <xs:documentation>Name of the specific ExtLib Module</xs:documentation>
+                      </xs:annotation>
+                      <xs:attribute name="version" type="xs:string" use="required"/>
+                    </xs:element>
+                  </xs:sequence>
+                </xs:complexType>
+              </xs:element>
+              <xs:element type="xs:string" name="description">
+                <xs:annotation>
+                  <xs:documentation>ExtLib description</xs:documentation>
+                </xs:annotation>
+              </xs:element>
+            </xs:sequence>
+          </xs:complexType>
+        </xs:element>
+        <xs:element name="parameters">
+         <xs:annotation>
+           <xs:documentation>configuration parameters if appropriate</xs:documentation>
+         </xs:annotation>
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element type="xs:string" name="Method">
+                <xs:annotation>
+                  <xs:documentation>Selected Method: FAST, STANDARD or FINE</xs:documentation>
+                </xs:annotation>
+              </xs:element>
+              <xs:element type="xs:decimal" name="WorkingVelocityPrecision_mmy">
+                <xs:annotation>
+                  <xs:documentation>User-defined Velocity Precision (mm/year)</xs:documentation>
+                </xs:annotation>
+              </xs:element>
+              <xs:element type="xs:decimal" name="WorkingDEMErrorPrecision_m">
+                <xs:annotation>
+                  <xs:documentation>User-defined Height Precision (m)</xs:documentation>
+                </xs:annotation>
+              </xs:element>
+              <xs:element type="xs:decimal" name="MaxDEMError_m">
+                <xs:annotation>
+                  <xs:documentation>User-defined threshold on the relative DEM error (m)</xs:documentation>
+                </xs:annotation>
+              </xs:element>
+              <xs:element type="xs:decimal" name="MaxVelocity_mmy">
+                <xs:annotation>
+                  <xs:documentation>User-defined threshold on the Velocity (mm/year)</xs:documentation>
+                </xs:annotation>
+              </xs:element>
+              <xs:element type="xs:decimal" name="SPEA_IICth">
+                <xs:annotation>
+                  <xs:documentation>IIC threshold selected by SPEA module</xs:documentation>
+                </xs:annotation>
+              </xs:element>
+              <xs:element type="xs:decimal" name="product_IICth">
+                <xs:annotation>
+                  <xs:documentation>IIC threshold of the final product</xs:documentation>
+                </xs:annotation>
+              </xs:element>
+              <xs:element type="xs:decimal" name="expert_user_IICth">
+                <xs:annotation>
+                  <xs:documentation>Optimal threshold proposed by the operator (default: NaN)</xs:documentation>
+                </xs:annotation>
+              </xs:element>
+            </xs:sequence>
+          </xs:complexType>
+        </xs:element>
+        <xs:element name="processing_time">
+         <xs:annotation>
+           <xs:documentation>UTC timestamp ISO 8601</xs:documentation>
+         </xs:annotation>
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element type="xs:string" name="start">
+                <xs:annotation>
+                  <xs:documentation>start processing time</xs:documentation>
+                </xs:annotation>
+              </xs:element>
+              <xs:element type="xs:string" name="end">
+              <xs:annotation>
+               <xs:documentation>end processing time</xs:documentation>
+              </xs:annotation>
+              </xs:element>
+            </xs:sequence>
+          </xs:complexType>
+        </xs:element>
+        <xs:element name="output_product">
+          <xs:annotation>
+            <xs:documentation>list of metadata of final product</xs:documentation>
+          </xs:annotation>
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element type="xs:string" name="id">
+                <xs:annotation>
+                  <xs:documentation>product unique identifier</xs:documentation>
+                </xs:annotation>
+              </xs:element>
+              <xs:element type="xs:string" name="prevProductID">
+                <xs:annotation>
+                  <xs:documentation>previous product unique identifier</xs:documentation>
+                </xs:annotation>
+              </xs:element>
+              <xs:element type="xs:string" name="dataset_id">
+                <xs:annotation>
+                  <xs:documentation>dataset  id. For example: SENTINEL-1IWIW1117117ASCENDINGVV-VHSSLC1237.5</xs:documentation>
+                </xs:annotation>
+              </xs:element>
+              <xs:element type="xs:string" name="supermaster_id">
+                <xs:annotation>
+                  <xs:documentation>supermaster id. For example: 7f7efbe2-29f0-412a-b278-0499cdb06be9</xs:documentation>
+                </xs:annotation>
+              </xs:element>
+              <xs:element type="xs:string" name="crop_geo_id">
+                <xs:annotation>
+                  <xs:documentation>crop id in geographic coordinates. For example: LAT45.39_45.52LON9.05_9.32</xs:documentation>
+                </xs:annotation>
+              </xs:element>
+              <xs:element type="xs:string" name="crop_id">
+                <xs:annotation>
+                  <xs:documentation>crop id. For example: FF_L1_10000P1_10000</xs:documentation>
+                </xs:annotation>
+              </xs:element>
+              <xs:element type="xs:string" name="mission">
+                <xs:annotation>
+                  <xs:documentation>SAR mission. For example: Sentinel-1</xs:documentation>
+                </xs:annotation>
+              </xs:element>
+              <xs:element type="xs:string" name="acquisition_mode">
+                <xs:annotation>
+                  <xs:documentation>SAR Acquisition Mode. For example: IW1</xs:documentation>
+                </xs:annotation>
+              </xs:element>
+              <xs:element type="xs:string" name="swath_id">
+                <xs:annotation>
+                  <xs:documentation>swath id. For example: IW1</xs:documentation>
+                </xs:annotation>
+              </xs:element>
+              <xs:element type="xs:string" name="polarization">
+                <xs:annotation>
+                  <xs:documentation>polarization. For example: VV</xs:documentation>
+                </xs:annotation>
+              </xs:element>
+              <xs:element type="xs:string" name="pass">
+                <xs:annotation>
+                  <xs:documentation>pass direction. For example: ASCENDING</xs:documentation>
+                </xs:annotation>
+              </xs:element>
+              <xs:element type="xs:string" name="look_side">
+                <xs:annotation>
+                  <xs:documentation>look side. For example: RIGHT</xs:documentation>
+                </xs:annotation>
+              </xs:element>
+              <xs:element type="xs:decimal" name="radar_wavelength">
+                <xs:annotation>
+                  <xs:documentation>radar wavelength (m). For example: 0.055466</xs:documentation>
+                </xs:annotation>
+              </xs:element>
+              <xs:element type="xs:decimal" name="slant_range_spacing">
+                <xs:annotation>
+                  <xs:documentation>slant range spacing (m). For example: 2.3296</xs:documentation>
+                </xs:annotation>
+              </xs:element>
+              <xs:element type="xs:decimal" name="azimuth_spacing">
+                <xs:annotation>
+                  <xs:documentation>azimuth spacing (m). For example: 13.9203</xs:documentation>
+                </xs:annotation>
+              </xs:element>
+              <xs:element type="xs:integer" name="relativeOrbitNumber">
+                <xs:annotation>
+                  <xs:documentation>relative orbit number. For example: 124</xs:documentation>
+                </xs:annotation>
+              </xs:element>
+              <xs:element type="xs:string" name="auxiliary_DEM">
+                <xs:annotation>
+                  <xs:documentation>Auxiliary DEM. For example: SRTM 1arcsec</xs:documentation>
+                </xs:annotation>
+              </xs:element>
+              <xs:element type="xs:string" name="ellipsoid">
+                <xs:annotation>
+                  <xs:documentation>Ellipsoid Designator. For example: WGS-84</xs:documentation>
+                </xs:annotation>
+              </xs:element>
+              <xs:element type="xs:string" name="geoid">
+                <xs:annotation>
+                  <xs:documentation>Geoid Designator. For example: EGM96</xs:documentation>
+                </xs:annotation>
+              </xs:element>
+              <xs:element name="product_ids">
+              <xs:annotation>
+               <xs:documentation>List of acquisitions that belong from the dataset (without supermaster) </xs:documentation>
+              </xs:annotation>
+                <xs:complexType>
+                  <xs:sequence>
+                    <xs:element type="xs:string" name="product_id" maxOccurs="unbounded" minOccurs="0">
+                      <xs:annotation>
+                        <xs:documentation>Acquisition Name. For example: S1A_IW_SLC__1SDV_20141013T170346_20141013T170414_002814_0032B1_43CC</xs:documentation>
+                      </xs:annotation>
+                      <xs:attribute name="UUID" type="xs:string" use="required"/>
+                      <xs:attribute name="ORBIT_TYPE" type="xs:string" use="required"/>
+                    </xs:element>
+                  </xs:sequence>
+                </xs:complexType>
+              </xs:element>
+            </xs:sequence>
+          </xs:complexType>
+        </xs:element>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+</xs:schema>
