@@ -19,8 +19,27 @@ services:
                 traefik.http.routers.gui-http.rule: Host(`displacement.euler.local`)
                 traefik.http.routers.gui-http.tls: "true"
                 traefik.http.routers.gui-http.tls.certresolver: guiresolver
-                traefik.http.services.gui.loadbalancer.server.port: "80"
-        image: nginx:latest
+                traefik.http.services.gui.loadbalancer.server.port: "5000"
+        image: ${BASE_IMAGE_LOCATION}/${PROJECT_NAME}-gui:${BACKEND_VERSION}
+        networks:
+            - traefik-public
+            - euler-dev
+
+    geoserver:
+        image: kartoza/geoserver
+        deploy:
+            labels:
+                traefik.enable: "true"
+                traefik.http.routers.geoserver-http.entrypoints: https
+                traefik.http.routers.geoserver-http.rule: Host(`geoserver.euler.local`)
+                traefik.http.routers.geoserver-http.tls: "true"
+                traefik.http.routers.geoserver-http.tls.certresolver: georesolver
+                traefik.http.services.geoserver.loadbalancer.server.port: "8080"
+        environment:
+            GEOSERVER_ADMIN_USER: kartoza
+            GEOSERVER_ADMIN_PASSWORD: password
+        volumes:
+            - ${NFS_SHARED_DOCKERDATA}/geoserver/data:/opt/geoserver/data_dir
         networks:
             - traefik-public
             - euler-dev

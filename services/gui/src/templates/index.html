@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Displacement</title>
+    <!-- Import Leaflet stylesheets -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <!-- Set map style -->
+    <style>
+        /* Imposta la mappa a occupare l'intera altezza della finestra del browser */
+        body, html, #map { height: 100%; margin: 0; }
+    </style>
+</head>
+<body>
+    <div id="map"></div>
+
+    <!-- Import Leaflet library -->
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+    <script>
+
+        // Initialize the map with specified coordinates and zoom level
+        var map = L.map('map').setView([41.117143, 16.871871], 13);
+
+        // Add a layer with OpenStreetMap base map
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(map);
+
+
+        function drawPersistentScatterers() {
+            fetch('/get_coordinates', {
+                method: 'GET',
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json',
+                    'Sec-Fetch-Mode': 'navigate',
+                    'Sec-Fetch-Dest': 'document',
+                    'Upgrade-Insecure-Requests': '1'
+                },
+                credentials: 'include'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    console.error(data.error);
+                } else {
+                    data.forEach(point => {
+                        if (point.measurement) {
+                            const measurements = JSON.parse(point.measurement);
+                            const lastMeasurement = measurements.m[measurements.m.length - 1];
+                            let color;
+                            if (lastMeasurement >= -5 && lastMeasurement <= 5) {
+                                color = '#00FF00';
+                            } else if (lastMeasurement >= -10 && lastMeasurement <= 10) {
+                                color = 'yellow';
+                            } else {
+                                color = 'red';
+                            }
+                            const lat = point.lat;
+                            const lon = point.lon;
+                            const radius = getRadius(map.getZoom());
+                            L.circleMarker([lat, lon], {
+                                radius: radius,
+                                color: color,
+                                fillColor: color,
+                                fillOpacity: 0.8
+                            }).addTo(map);
+                        }
+                    });
+                }
+            })
+            .catch(error => console.error('Error retrieving coordinates:', error));
+        }
+
+        // Function to calculate the radius based on the map's zoom level
+        function getRadius(zoom) {
+            // Modify these constants according to your preferences
+            const maxZoom = 18; // Maximum zoom level (when the map is zoomed in all the way)
+            const minZoom = 5;  // Minimum zoom level (when the map is zoomed out all the way)
+            const maxRadius = 5; // Maximum radius (when the map is zoomed out all the way)
+            const minRadius = 0.5;  // Minimum radius (when the map is zoomed in all the way)
+
+            // Calculate the radius based on the current zoom level
+            const radius = minRadius + ((maxRadius - minRadius) * (zoom - minZoom) / (maxZoom - minZoom));
+            return radius;
+        }
+
+
+        map.on('zoomend', function() {
+            map.eachLayer(function(layer) {
+                if (layer instanceof L.CircleMarker) {
+                    const radius = getRadius(map.getZoom());
+                    layer.setRadius(radius);
+                }
+            });
+        });
+
+
+
+        // Call the function to draw the marker
+        drawPersistentScatterers();
+
+    </script>
+</body>
+</html>
