@@ -10,3 +10,5 @@ tls:
       keyFile: /etc/certs/keycloak.test.key
     - certFile: /etc/certs/test.test.crt
       keyFile: /etc/certs/test.test.key
+    - certFile: /etc/certs/geoserver.test.crt
+      keyFile: /etc/certs/geoserver.test.key

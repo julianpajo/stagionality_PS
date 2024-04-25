@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Displacement</title>
+    <!-- Import Leaflet stylesheets -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <!-- Set map style -->
+    <style>
+        /* Imposta la mappa a occupare l'intera altezza della finestra del browser */
+        body, html, #map { height: 100%; margin: 0; }
+    </style>
+</head>
+<body>
+    <div id="map"></div>
+
+    <!-- Import Leaflet library -->
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+    <script>
+
+        // Initialize the map with specified coordinates and zoom level
+        var map = L.map('map').setView([41.117143, 16.871871], 13);
+
+        mapLink =
+            '<a href="http://www.esri.com/">Esri</a>';
+        wholink =
+            'i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community';
+        L.tileLayer(
+            'http://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+            attribution: '&copy; '+mapLink+', '+wholink,
+            maxZoom: 18,
+            }).addTo(map);
+
+
+        var wmsLayer = L.tileLayer.wms('https://geoserver.euler.local/geoserver/euler/wms', {
+            layers: 'euler:ps_measurements',
+            format: 'image/png',
+            transparent: true
+        }).addTo(map);
+
+
+    </script>
+</body>
+</html>
