@@ -1,13 +1,6 @@
-from flask import Flask, render_template, redirect
+from flask import Flask, render_template
 
 app = Flask(__name__)
-
-
-@app.route('/oauth2/callback')
-def oauth2_callback():
-    return redirect("https://displacement.euler.local", code=302)
-
-
 @app.route('/')
 def index():
     return render_template('index.html')
