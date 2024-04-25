@@ -30,6 +30,8 @@ services:
         environment:
             GEOSERVER_ADMIN_USER: kartoza
             GEOSERVER_ADMIN_PASSWORD: password
+            PROXY_BASE_URL: https://geoserver.euler.local/geoserver
+            GEOSERVER_CSRF_DISABLED: "true"
         volumes:
             - ${NFS_SHARED_DOCKERDATA}/geoserver/data:/opt/geoserver/data_dir
         networks:
