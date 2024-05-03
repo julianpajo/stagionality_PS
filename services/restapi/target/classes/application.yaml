@@ -1,0 +1,10 @@
+server:
+  port: 8081
+
+spring:
+  application:
+    name: restapi
+    cookie:
+      name: _oauth2_proxy
+    geoserver:
+      uri: http://geoserver:8080/geoserver
