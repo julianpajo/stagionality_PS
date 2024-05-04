@@ -7,16 +7,19 @@ document.getElementById('close-button-nodata').addEventListener('click', functio
     document.getElementById('nodata').style.display = 'none';
 });
 
+document.getElementById('close-button-permission-denied').addEventListener('click', function() {
+    document.getElementById('permission-denied').style.display = 'none';
+});
+
 function processData(data) {
-    if (data.numberReturned === 0) {
-        document.getElementById('chart').style.display = 'none';
-        var nodata = document.getElementById("nodata");
+    if (data.numberReturned === -1){
+        var nodata = document.getElementById("permission-denied");
         nodata.style.display = "block";
         nodata.classList.add('slide-in');
         setTimeout(function() {
             nodata.classList.remove('slide-in');
         }, 500);
-    } else {
+    } else if (data.numberReturned === 1){
         destroyChart();
         document.getElementById('chart').style.display = 'block';
         document.getElementById('nodata').style.display = 'none';
@@ -27,6 +30,14 @@ function processData(data) {
         getCity(latitude, longitude);
 
         drawChart(data);
+    } else {
+        document.getElementById('chart').style.display = 'none';
+        var nodata = document.getElementById("nodata");
+        nodata.style.display = "block";
+        nodata.classList.add('slide-in');
+        setTimeout(function() {
+            nodata.classList.remove('slide-in');
+        }, 500);
     }
 }
 

@@ -1,5 +1,6 @@
 document.getElementById("chart").style.display = "none";
 document.getElementById("nodata").style.display = "none";
+document.getElementById("permission-denied").style.display = "none";
 
 // Initialize the map with specified coordinates and zoom level
 var map = L.map('map').setView([41.117143, 16.871871], 13);

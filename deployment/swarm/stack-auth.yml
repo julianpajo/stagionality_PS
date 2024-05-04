@@ -40,6 +40,7 @@ services:
       - keycloak
     networks:
       - traefik-public
+      - euler-dev
     volumes:
       - ../certificates/keycloak.test.crt:/etc/ssl/certs/ca-certificates.crt
     
@@ -97,6 +98,8 @@ services:
 
 networks:
   traefik-public:
+    external: true
+  euler-dev:
     external: true
 secrets:
   postgres_passwd:

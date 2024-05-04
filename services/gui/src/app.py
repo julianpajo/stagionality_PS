@@ -20,6 +20,13 @@ def getFeatures():
 
     lon_min, lat_min, lon_max, lat_max = calculate_bbox(lat, lon, 50)
 
+    cookie_value = request.cookies.get('_oauth2_proxy')
+
+    if cookie_value:
+        cookies = {'_oauth2_proxy': cookie_value}
+    else:
+        cookies = None
+
     params = {
         "lon_min": float(lon_min),
         "lat_min": float(lat_min),
@@ -27,7 +34,8 @@ def getFeatures():
         "lat_max": float(lat_max),
     }
 
-    response = requests.get(url, params=params)
+    response = requests.get(url, params=params, cookies=cookies)
+
     featureInfo = response.text
 
     return featureInfo

@@ -28,14 +28,35 @@ body, html, #map {
     background-color: #003A57;
 }
 
+.overlay-permission-denied {
+    width: 450px;
+    height: 50px;
+    background: white;
+    z-index: 10;
+    border-radius: 5px;
+    overflow: hidden;
+    background-color: #003A57;
+}
+
 
 #nodata {
     bottom: 50px;
     right: 50px;
-
 }
 
 #nodata p {
+    padding-left: 10px;
+    color: white;
+    font-family: 'Montserrat';
+    font-size: 15px;
+}
+
+#permission-denied {
+    bottom: 50px;
+    right: 50px;
+}
+
+#permission-denied p {
     padding-left: 10px;
     color: white;
     font-family: 'Montserrat';
@@ -68,7 +89,7 @@ body, html, #map {
     top: 13px;
 }
 
-#close-button, #close-button-nodata {
+#close-button, #close-button-nodata, #close-button-permission-denied {
         background-color: transparent;
         border: none;
         color: #4c9ac2;
@@ -78,7 +99,7 @@ body, html, #map {
         font-weight: bold;
     }
 
-#close-button:hover, #close-button-nodata:hover {
+#close-button:hover, #close-button-nodata:hover, #close-button-permission-denied:hover {
     color: white;
 }
 
