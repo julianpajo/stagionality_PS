@@ -12,3 +12,7 @@ docker exec -u root -i "$auth_oauth2proxy_container" sh -c "echo '$traefik_ip ke
 
 docker stack deploy -c euler.yml euler
 
+sleep 5
+
+restapi_container=$(docker ps -qf "name=euler_restapi")
+docker exec -u root -i "$restapi_container" sh -c "echo '$traefik_ip geoserver.euler.local' >> /etc/hosts"

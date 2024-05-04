@@ -1,46 +1,83 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Displacement</title>
-    <!-- Import Leaflet stylesheets -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
-    <!-- Set map style -->
-    <style>
-        /* Imposta la mappa a occupare l'intera altezza della finestra del browser */
-        body, html, #map { height: 100%; margin: 0; }
-    </style>
-</head>
-<body>
-    <div id="map"></div>
-
-    <!-- Import Leaflet library -->
-    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-
-    <script>
-
-        // Initialize the map with specified coordinates and zoom level
-        var map = L.map('map').setView([41.117143, 16.871871], 13);
-
-        mapLink =
-            '<a href="http://www.esri.com/">Esri</a>';
-        wholink =
-            'i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community';
-        L.tileLayer(
-            'http://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-            attribution: '&copy; '+mapLink+', '+wholink,
-            maxZoom: 18,
-            }).addTo(map);
-
-
-        var wmsLayer = L.tileLayer.wms('https://geoserver.euler.local/geoserver/euler/wms', {
-            layers: 'euler:ps_measurements',
-            format: 'image/png',
-            transparent: true
-        }).addTo(map);
-
-
-    </script>
-</body>
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Displacement</title>
+        <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+        <link rel="stylesheet" href="../static/styles/styles.css">
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Montserrat">
+    </head>
+    <body>
+        <div id="map"></div>
+        <div id="chart" class="box overlay-chart">
+            <table width="100%">
+                <tr style="background-color: #003A57; height: 50px">
+                    <td style="text-align: center;" colspan="2">
+                        <div style="position: relative;">
+                            <p class="chart-header">Serie storica di spostamento</p>
+                            <div class="close-button-container">
+                                <button id="close-button">×</button>
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <div>
+                            <p id="ps-location"></p>
+                        </div>
+                    </td>
+                </tr>
+                <tr style="height: 250px;">
+                    <td id="canvasContainer">
+                        <div style="margin-right:50px">
+                            <canvas id="myChart" width="600px" height="250px"></canvas>
+                        </div>
+                    </td>
+                    <td width="20px"></td>
+                </tr>
+                <tr>
+                    <td colspan="2">
+                        <div style="margin-left: 55px; margin-right: 25px;">
+                            <p class="ps-date" id="ps-date-start" style="float: left;">10/10/2015</p>
+                            <p class="ps-date" id="ps-date-end" style="float: right;">10/10/2020</p>
+                        </div>
+                    </td>
+                </tr>
+                <tr style="height:20px"></tr>
+                <tr>
+                    <td colspan="2">
+                        <table id="ps-feature-info">
+                            <tr style="margin-top: 10px">
+                                <th>Codice Scatterer</th>
+                                <th>Prodotto</th>
+                                <th>Coerenza (%)</th>
+                                <th>Quota (m)</th>
+                                <th>Velocità (mm/anno)</th>
+                                <th>Accelerazione (mm/year²)</th>
+                            </tr>
+                            <tr>
+                                <td id="ps-id"></td>
+                                <td id="ps-product"></td>
+                                <td id="ps-coherence"></td>
+                                <td id="ps-height"></td>
+                                <td id="ps-velocity"></td>
+                                <td id="ps-acceleration"></td>
+                        </table>
+                    </td>
+                </tr>
+            </table>
+        </div>
+        <div id="nodata" class="box overlay-nodata">
+            <p> Nessun Persistent Scatterer trovato</p>
+            <div class="close-button-container-nodata">
+                <button id="close-button-nodata">×</button>
+            </div>
+        </div>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.4/Chart.js"></script>
+        <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+        <script src="../static/js/map-controller.js"></script>
+        <script src="../static/js/ps-trends.js"></script>
+    </body>
 </html>

@@ -1,0 +1,127 @@
+body, html, #map {
+    height: 100%;
+    margin: 0;
+    z-index: 0
+}
+
+.box {
+    position: absolute;
+    bottom: 50px;
+    right: 50px;
+    z-index: 10;
+}
+
+.overlay-chart {
+    width: 850px;
+    height: 550px;
+    background: white;
+    z-index: 11;
+}
+
+.overlay-nodata {
+    width: 350px;
+    height: 50px;
+    background: white;
+    z-index: 10;
+    border-radius: 5px;
+    overflow: hidden;
+    background-color: #003A57;
+}
+
+
+#nodata {
+    bottom: 50px;
+    right: 50px;
+
+}
+
+#nodata p {
+    padding-left: 10px;
+    color: white;
+    font-family: 'Montserrat';
+    font-size: 15px;
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateX(100%);
+    }
+    to {
+        transform: translateX(0);
+    }
+}
+
+.slide-in {
+    animation: slideIn 0.1s forwards;
+}
+
+
+.close-button-container {
+    position: absolute;
+    right: 20px;
+    top: 0;
+}
+
+.close-button-container-nodata {
+    position: absolute;
+    right: 15px;
+    top: 13px;
+}
+
+#close-button, #close-button-nodata {
+        background-color: transparent;
+        border: none;
+        color: #4c9ac2;
+        cursor: pointer;
+        transition: color 0.1s;
+        font-size: 20px;
+        font-weight: bold;
+    }
+
+#close-button:hover, #close-button-nodata:hover {
+    color: white;
+}
+
+.chart-header{
+    text-align: center;
+    font-family: 'Montserrat';
+    color: white;
+    display: inline;
+    font-size: 20px
+}
+
+#ps-location{
+    text-align: center;
+    font-family: 'Montserrat';
+    font-size: 20px;
+    color: #003A57
+}
+
+.ps-date{
+    margin: 0;
+    font-family: 'Helvetica';
+    font-size: 12px;
+    color: #868686;
+}
+
+
+#ps-feature-info {
+    border-collapse: collapse;
+    width: 100%;
+}
+
+#ps-feature-info th, #ps-feature-info td {
+    text-align: center;
+    padding: 8px;
+    font-size: 12px;
+    font-family: 'Helvetica'
+}
+
+#ps-feature-info tr:nth-child(even) {
+    background-color: #f2f2f2;
+}
+
+#ps-feature-info tr:first-child {
+    margin-top: 20px;
+}
+

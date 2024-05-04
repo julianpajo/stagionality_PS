@@ -27,7 +27,7 @@ ALTER SCHEMA euler OWNER TO postgres;
 
 --
 -- TOC entry 309 (class 1259 OID 19437)
--- Name: ps; Type: TABLE; Schema: euler; Owner: euler
+-- Name: ps_measurements; Type: TABLE; Schema: euler; Owner: euler
 --
 
 CREATE TABLE euler.ps_measurements (
@@ -43,7 +43,7 @@ CREATE TABLE euler.ps_measurements (
     geom_4326 postgis.geometry,
     periodic_properties jsonb,
     measurement text,
-    last_measurement real
+    velocity real
     
 )
 WITH (fillfactor='70', autovacuum_vacuum_scale_factor='0', autovacuum_vacuum_threshold='1000000', autovacuum_enabled='true', toast.autovacuum_enabled='true');
