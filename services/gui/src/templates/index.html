@@ -7,8 +7,16 @@
         <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
         <link rel="stylesheet" href="../static/styles/styles.css">
         <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Montserrat">
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Libre Baskerville">
     </head>
     <body>
+        <header>
+            <img src="{{ url_for ('static', filename='images/logo.png')}}" height="60px">
+            <div class="profile-info">
+                <span>ADMIN</span>
+                <div class="profile-icon"></div>
+            </div>
+        </header>
         <div id="map"></div>
         <div id="chart" class="box overlay-chart">
             <table width="100%">
