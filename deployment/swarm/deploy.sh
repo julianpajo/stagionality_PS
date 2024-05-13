@@ -17,3 +17,6 @@ sleep 5
 restapi_container=$(docker ps -qf "name=euler_restapi")
 docker exec -u root -i "$restapi_container" sh -c "echo '$traefik_ip geoserver.euler.local' >> /etc/hosts"
 docker exec -u root -i "$restapi_container" sh -c "echo '$traefik_ip displacement.euler.local' >> /etc/hosts"
+
+gui_container=$(docker ps -qf "name=euler_gui")
+docker exec -u root -i "$gui_container" sh -c "echo '$traefik_ip displacement.euler.local' >> /etc/hosts"

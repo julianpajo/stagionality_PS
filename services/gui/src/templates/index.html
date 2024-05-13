@@ -7,20 +7,27 @@
         <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
         <link rel="stylesheet" href="../static/styles/styles.css">
         <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Montserrat">
-        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Libre Baskerville">
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Bebas Neue">
     </head>
     <body>
         <header>
-            <img src="{{ url_for ('static', filename='images/logo.png')}}" height="60px">
+            <div class="brand-text">
+                Euler Displacement
+            </div>
+            <div class="logo">
+                <img src="{{ url_for ('static', filename='images/logo.png')}}" height="60px">
+            </div>
             <div class="profile-info">
-                <span>ADMIN</span>
-                <div class="profile-icon"></div>
+                <div class="profile-icon">
+                    <span id="user">admin</span>
+                    <img src="{{ url_for ('static', filename='images/icon.png')}}" height="30px">
+                </div>
             </div>
         </header>
         <div id="map"></div>
         <div id="chart" class="box overlay-chart">
             <table width="100%">
-                <tr style="background-color: #003A57; height: 50px">
+                <tr style="background-color: #000000; height: 50px">
                     <td style="text-align: center;" colspan="2">
                         <div style="position: relative;">
                             <p class="chart-header">Serie storica di spostamento</p>
@@ -93,5 +100,6 @@
         <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
         <script src="../static/js/map-controller.js"></script>
         <script src="../static/js/ps-trends.js"></script>
+        <script src="../static/js/user-controller.js"></script>
     </body>
 </html>

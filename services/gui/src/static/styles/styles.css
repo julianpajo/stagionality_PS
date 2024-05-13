@@ -5,6 +5,24 @@ header {
     justify-content: space-between;
     align-items: center;
     height: 80px;
+    position: relative;
+}
+
+.brand-text {
+    margin-left: 20px;
+    font-size: 30px;
+    font-family: 'Bebas Neue';
+}
+
+.logo {
+    height: 60px;
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+.logo img {
+    height: 100%;
 }
 
 .profile-info {
@@ -16,17 +34,28 @@ header {
 .profile-icon {
     width: 30px;
     height: 30px;
-    background-color: #fff;
-    border-radius: 50%;
-    margin-left: 10px;
-    margin-right: 20px;
+    margin-right: 40px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }
 
-body, html, #map {
-    height: calc(100vh - 80px);
+.profile-info span {
+     margin-right: 7px;
+    font-size: 15px
+}
+
+html, body {
+    height: 100%;
     margin: 0;
-    z-index: 0
+    z-index: 0;
     overflow: hidden;
+}
+
+#map {
+    height: calc(100% - 80px);
+    margin: 0;
+    z-index: 0;
 }
 
 .box {
@@ -50,7 +79,7 @@ body, html, #map {
     z-index: 10;
     border-radius: 5px;
     overflow: hidden;
-    background-color: #003A57;
+    background-color: #000000;
 }
 
 .overlay-permission-denied {
@@ -60,7 +89,7 @@ body, html, #map {
     z-index: 10;
     border-radius: 5px;
     overflow: hidden;
-    background-color: #003A57;
+    background-color: #000000;
 }
 
 
@@ -117,7 +146,7 @@ body, html, #map {
 #close-button, #close-button-nodata, #close-button-permission-denied {
         background-color: transparent;
         border: none;
-        color: #4c9ac2;
+        color: #6E6E6E;
         cursor: pointer;
         transition: color 0.1s;
         font-size: 20px;
@@ -140,7 +169,7 @@ body, html, #map {
     text-align: center;
     font-family: 'Montserrat';
     font-size: 20px;
-    color: #003A57
+    color: #000000
 }
 
 .ps-date{
