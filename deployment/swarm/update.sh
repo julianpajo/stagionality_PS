@@ -3,8 +3,6 @@
 docker-compose --env-file ./config/.deploy.env -f stack-dev.yml  config > euler.yml
 docker-compose --env-file ./config/.deploy.env -f stack-auth.yml  config > auth.yml
 
-echo "euler.yml and keycloak.yml created succesfully"
-
 files=("euler.yml" "auth.yml")
 
 for file in "${files[@]}"; do
@@ -26,3 +24,5 @@ for file in "${files[@]}"; do
     sed -i '/depends_on:/{n;s/:$//;s/^ */    - /}' "$file"
     sed -i '/depends_on:/{n;n;d;}' "$file"
 done
+
+echo "euler.yml and auth.yml created succesfully"

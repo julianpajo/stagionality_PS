@@ -12,28 +12,55 @@ services:
     # GUI Section
 
     gui:
+        image: ${BASE_IMAGE_LOCATION}/${PROJECT_NAME}-gui:${BACKEND_VERSION}
+        networks:
+            - traefik-public
+            - euler-dev
+    
+    # _____                                         
+    #|  __ \                                        
+    #| |  \/ ___  ___  ___  ___ _ ____   _____ _ __ 
+    #| | __ / _ \/ _ \/ __|/ _ \ '__\ \ / / _ \ '__|
+    #| |_\ \  __/ (_) \__ \  __/ |   \ V /  __/ |   
+    # \____/\___|\___/|___/\___|_|    \_/ \___|_|   
+                                               
+    # Geoserver Section                                           
+
+    geoserver:
+        image: kartoza/geoserver
         deploy:
             labels:
                 traefik.enable: "true"
-                traefik.http.routers.gui-http.entrypoints: https
-                traefik.http.routers.gui-http.rule: Host(`displacement.euler.local`)
-                traefik.http.routers.gui-http.tls: "true"
-                traefik.http.routers.gui-http.tls.certresolver: guiresolver
-                traefik.http.services.gui.loadbalancer.server.port: "80"
-        image: nginx:latest
+                traefik.http.routers.geoserver-http.entrypoints: https
+                traefik.http.routers.geoserver-http.rule: Host(`geoserver.euler.local`)
+                traefik.http.routers.geoserver-http.tls: "true"
+                traefik.http.routers.geoserver-http.tls.certresolver: georesolver
+                traefik.http.services.geoserver.loadbalancer.server.port: "8080"
+        environment:
+            GEOSERVER_ADMIN_USER: kartoza
+            GEOSERVER_ADMIN_PASSWORD: password
+            PROXY_BASE_URL: https://geoserver.euler.local/geoserver
+            GEOSERVER_CSRF_DISABLED: "true"
+        volumes:
+            - ${NFS_SHARED_DOCKERDATA}/geoserver/data:/opt/geoserver/data_dir
         networks:
             - traefik-public
             - euler-dev
 
+    #______          _    ___  ______ _____ 
+    #| ___ \        | |  / _ \ | ___ \_   _|
+    #| |_/ /___  ___| |_/ /_\ \| |_/ / | |  
+    #|    // _ \/ __| __|  _  ||  __/  | |  
+    #| |\ \  __/\__ \ |_| | | || |    _| |_ 
+    #\_| \_\___||___/\__\_| |_/\_|    \___/ 
 
-    #gui-apigw:
-    #    image: ${BASE_IMAGE_LOCATION}/${PROJECT_NAME}-gui_apigw:${BACKEND_VERSION}
-    #    volumes:
-    #    - ${NFS_SHARED_DOCKERDATA}/gui/apigw/logs/:/logs/:rw
-    #    networks:
-    #    - traefik-public
-    #    - euler-dev
-    #    environment:
+    # RestAPI Section                                 
+
+    restapi:
+        image: ${BASE_IMAGE_LOCATION}/${PROJECT_NAME}-restapi:${BACKEND_VERSION}
+        networks:
+        - traefik-public
+        - euler-dev
 
 
     #____________ 
@@ -68,29 +95,6 @@ services:
             - postgres_passwd
         networks:
             - euler-dev
-
-
-    #pgbackup:
-    #    image: ${BASE_IMAGE_LOCATION}/${PROJECT_NAME}-pg_backup:${BACKEND_VERSION}
-    #    volumes:
-    #        - ${NFS_SHARED_BACKUP}/db_ps/:/backups
-    #    environment:
-    #        POSTGRES_HOST: db-ps
-    #        POSTGRES_DBS: euler
-    #        POSTGRES_USER: euler
-    #        POSTGRES_PORT: 5432
-    #        POSTGRES_EXTRA_OPTS: -Z6
-    #        BACKUP_DIR: /backups
-    #        BACKUP_SUFFIX: .sql
-    #        BACKUP_KEEP_DAYS: 7
-    #        BACKUP_KEEP_WEEKS: 4
-    #        BACKUP_KEEP_MONTHS: 6
-    #        BACKUP_KEEP_MINS: 1440
-    #        POSTGRES_PASSWORD_FILE: /run/secrets/postgres_passwd
-    #    networks:
-    #        euler-dev: {}
-    #    secrets:
-    #        - source: postgres_passwd
 
 networks:
     euler-dev:

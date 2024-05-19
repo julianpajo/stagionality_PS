@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Displacement</title>
+        <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+        <link rel="stylesheet" href="../static/styles/main.css">
+        <link rel="stylesheet" href="../static/styles/header.css">
+        <link rel="stylesheet" href="../static/styles/chart.css">
+        <link rel="stylesheet" href="../static/styles/profile-menu.css">
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Montserrat">
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Bebas Neue">
+    </head>
+    <body>
+        <header>
+            <div class="brand-text">
+                Euler Displacement
+            </div>
+            <div class="logo">
+                <img src="{{ url_for ('static', filename='images/logo.png')}}">
+            </div>
+            <div class="profile-info">
+                <div class="profile-icon">
+                    <span id="user"></span>
+                    <img src="{{ url_for ('static', filename='images/icon.png')}}" height="30px" onclick="toggleMenu()">
+                </div>
+            </div>
+            <div class="profile-menu" id="menu">
+                <div class="menu-item">
+                    <img src="{{ url_for ('static', filename='images/profile.png')}}" height="50px">
+                    <p id="user-menu"></p>
+                </div>
+                <hr width="80%">
+                <div class="menu-item logout-item" onclick="performLogout()">
+                    <img src="{{ url_for ('static', filename='images/logout.png')}}" height="30px">
+                    <p id="logout">Logout</p>
+                </div>
+            </div>
+        </header>
+        <div id="map"></div>
+        <div id="chart" class="box overlay-chart">
+            <table width="100%">
+                <tr style="background-color: #000000; height: 50px">
+                    <td style="text-align: center;" colspan="2">
+                        <div style="position: relative;">
+                            <p class="chart-header">Serie storica di spostamento</p>
+                            <div class="close-button-container">
+                                <button id="close-button">×</button>
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <div>
+                            <p id="ps-location"></p>
+                        </div>
+                    </td>
+                </tr>
+                <tr style="height: 250px;">
+                    <td id="canvasContainer">
+                        <div style="margin-right:50px">
+                            <canvas id="myChart" width="600px" height="250px"></canvas>
+                        </div>
+                    </td>
+                    <td width="20px"></td>
+                </tr>
+                <tr>
+                    <td colspan="2">
+                        <div style="margin-left: 55px; margin-right: 25px;">
+                            <p class="ps-date" id="ps-date-start" style="float: left;">10/10/2015</p>
+                            <p class="ps-date" id="ps-date-end" style="float: right;">10/10/2020</p>
+                        </div>
+                    </td>
+                </tr>
+                <tr style="height:20px"></tr>
+                <tr>
+                    <td colspan="2">
+                        <table id="ps-feature-info">
+                            <tr style="margin-top: 10px">
+                                <th>Codice Scatterer</th>
+                                <th>Prodotto</th>
+                                <th>Coerenza (%)</th>
+                                <th>Quota (m)</th>
+                                <th>Velocità (mm/anno)</th>
+                                <th>Accelerazione (mm/year²)</th>
+                            </tr>
+                            <tr>
+                                <td id="ps-id"></td>
+                                <td id="ps-product"></td>
+                                <td id="ps-coherence"></td>
+                                <td id="ps-height"></td>
+                                <td id="ps-velocity"></td>
+                                <td id="ps-acceleration"></td>
+                        </table>
+                    </td>
+                </tr>
+            </table>
+        </div>
+        <div id="nodata" class="box overlay-nodata">
+            <p> Nessun Persistent Scatterer trovato</p>
+            <div class="close-button-container-nodata">
+                <button id="close-button-nodata">×</button>
+            </div>
+        </div>
+        <div id="permission-denied" class="box overlay-permission-denied">
+            <p> Permesso Negato. Contatta l'amministratore.</p>
+            <div class="close-button-container-nodata">
+                <button id="close-button-permission-denied">×</button>
+            </div>
+        </div>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.4/Chart.js"></script>
+        <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+        <script src="../static/js/map-controller.js"></script>
+        <script src="../static/js/ps-trends.js"></script>
+        <script src="../static/js/user-controller.js"></script>
+    </body>
+</html>

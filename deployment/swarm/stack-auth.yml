@@ -16,12 +16,13 @@ services:
       - --http-address
       - 0.0.0.0:4180
     environment:
-      OAUTH2_PROXY_UPSTREAMS: http://euler_gui/
+      OAUTH2_PROXY_UPSTREAMS: http://euler_gui:5000/
       OAUTH2_PROXY_PROVIDER_DISPLAY_NAME: Keycloak
       OAUTH2_PROXY_PROVIDER: keycloak-oidc 
       OAUTH2_PROXY_OIDC_ISSUER_URL: https://keycloak.${DEPLOY_DOMAIN}/auth/realms/Euler
       OAUTH2_PROXY_CLIENT_ID: euler
       OAUTH2_PROXY_CLIENT_SECRET: xzwfZ9vzJBFntl0jiESPJGvRBj6UPpxT
+      OAUTH2_PROXY_COOKIE_EXPIRE: "5h"
       OAUTH2_PROXY_PASS_ACCESS_TOKEN: "true"
       OAUTH2_PROXY_SKIP_PROVIDER_BUTTON: "true"      
       OAUTH2_PROXY_EMAIL_DOMAINS: '*' 
@@ -32,13 +33,16 @@ services:
       OAUTH2_PROXY_LOGIN_URL: https://keycloak.${DEPLOY_DOMAIN}/auth/realms/Euler/protocol/openid-connect/auth
       OAUTH2_PROXY_REDEEM_URL: https://keycloak.${DEPLOY_DOMAIN}/auth/realms/Euler/protocol/openid-connect/token
       OAUTH2_PROXY_OIDC_JWKS_URL: https://keycloak.${DEPLOY_DOMAIN}/auth/realms/Euler/protocol/openid-connect/certs
+      OAUTH2_PROXY_LOGOUT_URL: https://keycloak.${DEPLOY_DOMAIN}/auth/realms/Euler/protocol/openid-connect/logout
       OAUTH2_PROXY_COOKIE_CSRF_PER_REQUEST: "true"
+      OAUTH2_PROXY_WHITELIST_DOMAINS: keycloak.${DEPLOY_DOMAIN}
     ports:
       - 4180:4180 
     depends_on:
       - keycloak
     networks:
       - traefik-public
+      - euler-dev
     volumes:
       - ../certificates/keycloak.test.crt:/etc/ssl/certs/ca-certificates.crt
     
@@ -96,6 +100,8 @@ services:
 
 networks:
   traefik-public:
+    external: true
+  euler-dev:
     external: true
 secrets:
   postgres_passwd:

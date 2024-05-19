@@ -1,2 +1,4 @@
 deployment/swarm/auth.yml
 deployment/swarm/euler.yml
+venv
+services/db-ps/src/development/data
