@@ -1,8 +1,10 @@
 from flask import Flask, render_template, request
 import requests
 from geopy.distance import distance
+from flask_cors import CORS
 
 app = Flask(__name__)
+CORS(app, resources={r"/*": {"origins": "*"}})
 
 
 @app.route('/')
@@ -12,7 +14,6 @@ def index():
 
 @app.route('/getFeatures', methods=['GET'])
 def getFeatures():
-
     url = "http://restapi:8081/getFeatures"
 
     lat = float(request.args.get('lat'))
@@ -42,8 +43,8 @@ def getFeatures():
 
 
 def calculate_bbox(lat, lon, gap_in_meters):
-
-    lat_gap, lon_gap = distance(meters=gap_in_meters).destination((lat, lon), 0).latitude - lat, distance(meters=gap_in_meters).destination((lat, lon), 90).longitude - lon
+    lat_gap, lon_gap = distance(meters=gap_in_meters).destination((lat, lon), 0).latitude - lat, distance(
+        meters=gap_in_meters).destination((lat, lon), 90).longitude - lon
 
     lat_min = lat - lat_gap
     lat_max = lat + lat_gap

@@ -33,7 +33,9 @@ services:
       OAUTH2_PROXY_LOGIN_URL: https://keycloak.${DEPLOY_DOMAIN}/auth/realms/Euler/protocol/openid-connect/auth
       OAUTH2_PROXY_REDEEM_URL: https://keycloak.${DEPLOY_DOMAIN}/auth/realms/Euler/protocol/openid-connect/token
       OAUTH2_PROXY_OIDC_JWKS_URL: https://keycloak.${DEPLOY_DOMAIN}/auth/realms/Euler/protocol/openid-connect/certs
+      OAUTH2_PROXY_LOGOUT_URL: https://keycloak.${DEPLOY_DOMAIN}/auth/realms/Euler/protocol/openid-connect/logout
       OAUTH2_PROXY_COOKIE_CSRF_PER_REQUEST: "true"
+      OAUTH2_PROXY_WHITELIST_DOMAINS: keycloak.${DEPLOY_DOMAIN}
     ports:
       - 4180:4180 
     depends_on:

@@ -96,29 +96,6 @@ services:
         networks:
             - euler-dev
 
-
-    #pgbackup:
-    #    image: ${BASE_IMAGE_LOCATION}/${PROJECT_NAME}-pg_backup:${BACKEND_VERSION}
-    #    volumes:
-    #        - ${NFS_SHARED_BACKUP}/db_ps/:/backups
-    #    environment:
-    #        POSTGRES_HOST: db-ps
-    #        POSTGRES_DBS: euler
-    #        POSTGRES_USER: euler
-    #        POSTGRES_PORT: 5432
-    #        POSTGRES_EXTRA_OPTS: -Z6
-    #        BACKUP_DIR: /backups
-    #        BACKUP_SUFFIX: .sql
-    #        BACKUP_KEEP_DAYS: 7
-    #        BACKUP_KEEP_WEEKS: 4
-    #        BACKUP_KEEP_MONTHS: 6
-    #        BACKUP_KEEP_MINS: 1440
-    #        POSTGRES_PASSWORD_FILE: /run/secrets/postgres_passwd
-    #    networks:
-    #        euler-dev: {}
-    #    secrets:
-    #        - source: postgres_passwd
-
 networks:
     euler-dev:
         external: true

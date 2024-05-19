@@ -1,63 +1,3 @@
-header {
-    background-color: #000000;
-    color: #fff;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    height: 80px;
-    position: relative;
-}
-
-.brand-text {
-    margin-left: 20px;
-    font-size: 30px;
-    font-family: 'Bebas Neue';
-}
-
-.logo {
-    height: 60px;
-    position: absolute;
-    left: 50%;
-    transform: translateX(-50%);
-}
-
-.logo img {
-    height: 100%;
-}
-
-.profile-info {
-    display: flex;
-    align-items: center;
-    font-family: 'Arial';
-}
-
-.profile-icon {
-    width: 30px;
-    height: 30px;
-    margin-right: 40px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-}
-
-.profile-info span {
-     margin-right: 7px;
-    font-size: 15px
-}
-
-html, body {
-    height: 100%;
-    margin: 0;
-    z-index: 0;
-    overflow: hidden;
-}
-
-#map {
-    height: calc(100% - 80px);
-    margin: 0;
-    z-index: 0;
-}
-
 .box {
     position: absolute;
     bottom: 50px;
@@ -144,14 +84,14 @@ html, body {
 }
 
 #close-button, #close-button-nodata, #close-button-permission-denied {
-        background-color: transparent;
-        border: none;
-        color: #6E6E6E;
-        cursor: pointer;
-        transition: color 0.1s;
-        font-size: 20px;
-        font-weight: bold;
-    }
+    background-color: transparent;
+    border: none;
+    color: #6E6E6E;
+    cursor: pointer;
+    transition: color 0.1s;
+    font-size: 20px;
+    font-weight: bold;
+}
 
 #close-button:hover, #close-button-nodata:hover, #close-button-permission-denied:hover {
     color: white;
@@ -199,4 +139,3 @@ html, body {
 #ps-feature-info tr:first-child {
     margin-top: 20px;
 }
-

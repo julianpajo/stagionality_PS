@@ -1,0 +1,50 @@
+header {
+    background-color: #000000;
+    color: #fff;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    height: 80px;
+    position: relative;
+}
+
+.brand-text {
+    font-size: 30px;
+    font-family: 'Bebas Neue';
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+.logo {
+    height: 70px;
+    margin-left: 20px;
+}
+
+.logo img {
+    height: 100%;
+}
+
+.profile-info {
+    display: flex;
+    align-items: center;
+    font-family: 'Arial';
+}
+
+.profile-icon {
+    width: 30px;
+    height: 30px;
+    margin-right: 40px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.profile-icon:hover {
+    cursor: pointer;
+}
+
+.profile-info span {
+    margin-right: 7px;
+    font-size: 15px
+}
