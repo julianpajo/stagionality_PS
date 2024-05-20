@@ -1,4 +1,6 @@
 deployment/swarm/auth.yml
 deployment/swarm/euler.yml
+deployment/swarm/traefik.yml
 venv
 services/db-ps/src/development/data
+services/gui/.idea
