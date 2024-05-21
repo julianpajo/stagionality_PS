@@ -27,12 +27,11 @@ services:
         traefik.docker.network: traefik-public
         traefik.enable: "true"
         traefik.http.routers.traefik-public-https.entrypoints: https
-        traefik.http.routers.traefik-public-https.rule: Host(`euler.local`) &&
-          (PathPrefix(`/api`) || PathPrefix(`/dashboard`))
+        traefik.http.routers.traefik-public-https.rule: Host(`euler.local`) && (PathPrefix(`/api`) || PathPrefix(`/dashboard`))
         traefik.http.routers.traefik-public-https.service: api@internal
         traefik.http.routers.traefik-public-https.tls: "true"
         traefik.http.services.proxy.loadbalancer.server.port: "8080"
-    image: traefik:v2.4
+    image: ${BASE_IMAGE_LOCATION}/${PROJECT_NAME}-traefik:${BACKEND_VERSION}
     networks:
       traefik-public: null
     ports:

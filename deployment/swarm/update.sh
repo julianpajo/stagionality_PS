@@ -2,8 +2,10 @@
 
 docker-compose --env-file ./config/.deploy.env -f stack-dev.yml  config > euler.yml
 docker-compose --env-file ./config/.deploy.env -f stack-auth.yml  config > auth.yml
+docker compose --env-file ./config/.deploy.env -f stack-traefik.yml  config > traefik.yml
 
-files=("euler.yml" "auth.yml")
+
+files=("euler.yml" "auth.yml" "traefik.yml")
 
 for file in "${files[@]}"; do
     # Check if the file exists
@@ -23,6 +25,10 @@ for file in "${files[@]}"; do
     sed -i 's/published: "\([0-9]*\)"/published: \1/g' "$file"
     sed -i '/depends_on:/{n;s/:$//;s/^ */    - /}' "$file"
     sed -i '/depends_on:/{n;n;d;}' "$file"
+
 done
 
-echo "euler.yml and auth.yml created succesfully"
+echo "euler.yml, auth.yml and traefik.yml created succesfully"
+
+
+

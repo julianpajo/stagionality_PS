@@ -28,4 +28,7 @@ COPY --from=builder application/application/ ./
 
 USER root
 
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+  CMD curl -IsS http://localhost:8081/health | head -n 1 | grep "200 OK" || exit 1
+
 ENTRYPOINT ["java", "-Dreactor.netty.http.server.accessLogEnabled=true",  "-Dspring.profiles.active=prod", "org.springframework.boot.loader.JarLauncher"]
