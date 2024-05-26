@@ -7,7 +7,7 @@
 
 .overlay-chart {
     width: 850px;
-    height: 550px;
+    height: 580px;
     background: white;
     z-index: 11;
 }
@@ -138,4 +138,13 @@
 
 #ps-feature-info tr:first-child {
     margin-top: 20px;
+}
+
+#rm_stagionality_noise {
+    margin-left: 28px;
+}
+
+#label_rm_stagionality_noise {
+    font-family: 'Helvetica';
+    font-size: 15px;
 }

@@ -1,7 +1,9 @@
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, jsonify
 import requests
 from geopy.distance import distance
 from flask_cors import CORS
+import stagionality_analysis
+
 
 app = Flask(__name__)
 CORS(app, resources={r"/*": {"origins": "*"}})
@@ -40,6 +42,15 @@ def getFeatures():
     featureInfo = response.text
 
     return featureInfo
+
+
+@app.route('/rm_stagionality_and_noise', methods=['POST'])
+def remove_stagionality_and_noise():
+    data = request.json
+    measurements = data.get('measurements')
+    trend = stagionality_analysis.remove_stagionality_and_noise(measurements)
+
+    return jsonify({'trend': trend})
 
 
 def calculate_bbox(lat, lon, gap_in_meters):

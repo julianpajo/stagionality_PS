@@ -1,3 +1,6 @@
+window.timeseries = null;
+window.myChart = null;
+
 document.getElementById('close-button').addEventListener('click', function() {
     document.getElementById('chart').style.display = 'none';
     destroyChart();
@@ -11,9 +14,29 @@ document.getElementById('close-button-permission-denied').addEventListener('clic
     document.getElementById('permission-denied').style.display = 'none';
 });
 
+document.addEventListener('DOMContentLoaded', (event) => {
+    const checkbox = document.getElementById('rm_stagionality_noise');
+
+    checkbox.addEventListener('change', function() {
+        if (this.checked) {
+            remove_stagionality_and_noise(window.timeseries)
+                .then(trend => {
+                    updateChart(trend);
+                })
+                .catch(error => {
+                    console.error(error);
+            });
+        } else {
+            updateChart(window.timeseries);
+        }
+    });
+});
+
+
 function processData(data) {
     if (data.numberReturned === -1){
         var nodata = document.getElementById("permission-denied");
+        document.getElementById('rm_stagionality_noise').checked = false;
         nodata.style.display = "block";
         nodata.classList.add('slide-in');
         setTimeout(function() {
@@ -23,6 +46,7 @@ function processData(data) {
         destroyChart();
         document.getElementById('chart').style.display = 'block';
         document.getElementById('nodata').style.display = 'none';
+        document.getElementById('rm_stagionality_noise').checked = false;
         var coordinates = data.features[0].geometry.coordinates;
         var latitude = coordinates[1];
         var longitude = coordinates[0];
@@ -80,6 +104,7 @@ function drawChart(featureInfo) {
 
 
     var measurementsValues = measurementsData.m;
+    window.timeseries = measurementsValues;
 
     var data = {
         labels: labels,
@@ -121,7 +146,7 @@ function drawChart(featureInfo) {
     };
 
     var ctx = document.getElementById('myChart').getContext('2d');
-    var myChart = new Chart(ctx, {
+    window.myChart = new Chart(ctx, {
         type: 'line',
         data: data,
         options: options,
@@ -151,6 +176,35 @@ function drawChart(featureInfo) {
 
 }
 
+function remove_stagionality_and_noise(timeseries) {
+    return new Promise((resolve, reject) => {
+        const url = '/rm_stagionality_and_noise';
+        fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ measurements: timeseries })
+        })
+        .then(response => response.json())
+        .then(data => {
+            resolve(data.trend);
+        })
+        .catch(error => {
+            console.error('Errore nella richiesta fetch:', error);
+            reject(error);
+        });
+    });
+}
+
+function updateChart(newMeasurementsValues) {
+
+    window.myChart.data.datasets[0].data = newMeasurementsValues;
+    window.myChart.update();
+
+}
+
+
 function destroyChart() {
     // Find the <td> element containing the canvas
     var tdCanvasContainer = document.getElementById("canvasContainer");
@@ -171,9 +225,6 @@ function destroyChart() {
             newCanvas.width = 700;
             newCanvas.height = 250;
 
-            // Add any attributes, classes, or styles to the new canvas if necessary
-
-            // Append the new canvas to the container
             tdCanvasContainer.appendChild(newCanvas);
         }
     }
