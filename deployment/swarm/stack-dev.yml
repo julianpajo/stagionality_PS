@@ -40,7 +40,7 @@ services:
             PROXY_BASE_URL: https://geoserver.${DEPLOY_DOMAIN}/geoserver
             GEOSERVER_CSRF_DISABLED: "true"
         volumes:
-            - ${NFS_SHARED_DOCKERDATA}/geoserver/data:/opt/geoserver/data_dir
+            - ./config/geoserver/data:/opt/geoserver/data_dir
         networks:
             - traefik-public
             - euler-dev
