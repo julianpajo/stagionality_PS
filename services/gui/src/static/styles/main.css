@@ -11,3 +11,20 @@ html, body {
     z-index: 0;
 }
 
+.legend::before {
+    content: '';
+    position: absolute;
+    width: 300px;
+    height: 65px;
+    bottom: 10px;
+    left: 10px;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 1;
+}
+
+.legend img {
+    position: absolute;
+    bottom: 20px;
+    left: 10px;
+    z-index: 2;
+}

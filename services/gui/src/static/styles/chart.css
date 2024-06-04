@@ -2,21 +2,21 @@
     position: absolute;
     bottom: 50px;
     right: 50px;
-    z-index: 10;
+    z-index: 1;
 }
 
 .overlay-chart {
     width: 850px;
     height: 580px;
     background: white;
-    z-index: 11;
+    z-index: 1;
 }
 
 .overlay-nodata {
     width: 350px;
     height: 50px;
     background: white;
-    z-index: 10;
+    z-index: 1;
     border-radius: 5px;
     overflow: hidden;
     background-color: #000000;
@@ -26,7 +26,7 @@
     width: 450px;
     height: 50px;
     background: white;
-    z-index: 10;
+    z-index: 1;
     border-radius: 5px;
     overflow: hidden;
     background-color: #000000;
