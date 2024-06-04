@@ -65,7 +65,7 @@ sudo touch /data/development/docker_data/traefik/access.log
 
 ### Update /etc/hosts file with local development domains
 
-Open the **/etc/hosts** file with 
+Open the `/etc/hosts` file with 
 
 ```bash
 sudo nano /etc/hosts
@@ -81,11 +81,15 @@ and add the following domains in the /etc/hosts file:
 
 ### Generate deploy yaml
 
-In order to generate the deploy yaml execute the **update.sh** script
+In order to generate the deploy yaml, navigate to the deployment path in `/path/to/project/stagionality_ps/deployment/swarm` and execute the `update.sh` script.
+
+### Build all docker images
+
+Navigate to the services path in `/path/to/project/stagionality_ps/services` and execute the `build_all.sh` script.
 
 ### Deploy stack yaml
 
-In order to deploy the swarm execute the **deploy.sh** script
+In order to deploy the swarm, navigate back to the deployment path and execute the `deploy.sh` script.
 
 ### How to setup the services
 

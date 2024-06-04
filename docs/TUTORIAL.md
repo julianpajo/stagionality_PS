@@ -12,7 +12,7 @@ docker ps
 
 ## Download Data
 
-Once the euler_db-ps service is up and healthy you can upload the data.
+Once the `euler_db-ps` service is up and healthy you can upload the data.
 
 To download the data and upload it into your database, you can execute the script provided.
 
