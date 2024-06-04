@@ -30,7 +30,7 @@ Log in using the credentials:
 Upon login, you will be presented with the interface displaying the map of Bari with the persistent scatterers.
 
 <br>
-<img src="docs/img/map.png" alt="map" width="50%"/>
+<img src="docs/img/map.png" alt="map">
 
 <br>
 
@@ -38,7 +38,7 @@ You can then query the Persistent Scatterers (PS) by clicking on them to obtain 
 
 <br>
 
-<img src="docs/img/displacement.png" alt="displacement" width="50%"/>
+<img src="docs/img/displacement.png" alt="displacement">
 
 <br>
 
@@ -46,4 +46,4 @@ By applying the filter, you can view the trend of the PS filtered from the seaso
 
 <br>
 
-<img src="docs/img/displacement2.png" alt="displacement2" width="50%"/>
+<img src="docs/img/displacement2.png" alt="displacement2">
