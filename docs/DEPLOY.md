@@ -15,12 +15,15 @@ docker swarm init
 The docker networks needed are:
 
 - euler-dev
+- traefik-public
+- auth
 
 You can create it with this command:
 
 ```bash
 docker network create -d overlay euler-dev
 docker network create -d overlay traefik-public
+docker network create -d overlay auth
 ```
 
 #### Docker secrets

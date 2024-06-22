@@ -41,6 +41,7 @@ services:
     networks:
       - traefik-public
       - euler-dev
+      - auth
     volumes:
       - ../certificates/keycloak.test.crt:/etc/ssl/certs/ca-certificates.crt
     
@@ -75,6 +76,7 @@ services:
       - 7080:8080 
     networks:
       - traefik-public
+      - auth
     depends_on:
       - keycloak-postgres
     secrets:
@@ -91,7 +93,7 @@ services:
       POSTGRES_USER: keycloak
       POSTGRES_PASSWORD_FILE: /run/secrets/keycloak_postgres_passwd
     networks:
-        - traefik-public
+        - auth
     secrets:
         - keycloak_postgres_passwd
 
@@ -100,6 +102,8 @@ networks:
   traefik-public:
     external: true
   euler-dev:
+    external: true
+  auth:
     external: true
 secrets:
   postgres_passwd:
