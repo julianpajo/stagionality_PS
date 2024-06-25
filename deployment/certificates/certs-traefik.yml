@@ -6,7 +6,5 @@ tls:
       keyFile: /etc/certs/displacement.test.key
     - certFile: /etc/certs/geoserver.test.crt
       keyFile: /etc/certs/geoserver.test.key
-    - certFile: /etc/certs/auth.test.crt
-      keyFile: /etc/certs/auth.test.key
     - certFile: /etc/certs/keycloak.test.crt
       keyFile: /etc/certs/keycloak.test.key

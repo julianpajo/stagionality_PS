@@ -45,8 +45,6 @@ services:
     - ../certificates/euler.test.crt:/etc/certs/euler.test.crt:rw
     - ../certificates/displacement.test.key:/etc/certs/displacement.test.key:rw
     - ../certificates/displacement.test.crt:/etc/certs/displacement.test.crt:rw
-    - ../certificates/auth.test.key:/etc/certs/auth.test.key:rw
-    - ../certificates/auth.test.crt:/etc/certs/auth.test.crt:rw
     - ../certificates/keycloak.test.key:/etc/certs/keycloak.test.key:rw
     - ../certificates/keycloak.test.crt:/etc/certs/keycloak.test.crt:rw
     - ../certificates/geoserver.test.key:/etc/certs/geoserver.test.key:rw
